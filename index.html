@@ -425,7 +425,7 @@ tr:last-child td{border-bottom:none;}
           <div class="backup-card">
             <div class="ic">⬆️</div>
             <h4>استعادة من نسخة احتياطية</h4>
-            <p>اختر ملف نسخة احتياطية سابق. بعد اختياره ستُسأل: استبدال كامل، أو دمج مع البيانات الحالية.</p>
+            <p>اختر ملف نسخة احتياطية سابق. بعد اختياره ستُسأل: استبدال كامل، أو الإبقاء على البيانات وتحديثها.</p>
             <button class="btn btn-outline" onclick="document.getElementById('restoreFile').click()">اختيار ملف الاستعادة</button>
             <input type="file" id="restoreFile" accept="application/json" onchange="handleRestoreFile(event)">
           </div>
@@ -673,9 +673,9 @@ tr:last-child td{border-bottom:none;}
         <button class="btn btn-danger" onclick="performRestore('replace')">استبدال كامل</button>
       </div>
       <div class="backup-card" style="text-align:right;">
-        <h4>➕ دمج مع البيانات الحالية</h4>
-        <p>يبقي كل بياناتك الحالية كما هي، ويضيف فوقها ما هو جديد من الملف (مرضى وزيارات وأدوية غير موجودة مسبقًا) دون حذف أي شيء.</p>
-        <button class="btn btn-primary" onclick="performRestore('merge')">دمج مع البيانات الحالية</button>
+        <h4>➕ الإبقاء على البيانات وتحديثها</h4>
+        <p>يبقي كل بياناتك الحالية، ويحدّث السجلات المطابقة (نفس المريض أو نفس الدواء) بأحدث ما ورد في الملف، ويضيف كل ما هو جديد (مرضى، زيارات، أدوية) — ولا يمس أي شيء آخر لا داعي لتغييره، دون حذف أي شيء.</p>
+        <button class="btn btn-primary" onclick="performRestore('merge')">الإبقاء على البيانات وتحديثها</button>
       </div>
     </div>
     <div class="modal-actions">
@@ -1668,7 +1668,7 @@ function printVisit(type, patientId, visitId){
   <style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;background:#fff;}
-    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:225mm;display:flex;flex-direction:column;}
+    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:190mm;display:flex;flex-direction:column;}
     .rx-header{position:relative;min-height:88px;padding-top:2px;}
     .rx-logo-wrap{position:absolute;top:0;left:0;width:82px;height:82px;border-radius:50%;border:2px dashed #cfd8e2;display:flex;align-items:center;justify-content:center;}
     .rx-logo-circle{width:66px;height:66px;border-radius:50%;background:linear-gradient(145deg,#3b7bab,#2a5b82);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;}
@@ -1911,7 +1911,7 @@ async function performRestore(mode){
       showToast('تم الاستبدال بنجاح. يمكنك التراجع من صفحة النسخ الاحتياطي إذا احتجت.');
     } else {
       await restoreMerge(data);
-      showToast('تم دمج البيانات بنجاح، ولم يُحذف أي شيء من بياناتك الحالية.');
+      showToast('تم تحديث البيانات المطابقة وإضافة الجديد بنجاح، ولم يُحذف أي شيء من بياناتك الحالية.');
     }
   }catch(err){
     console.error('performRestore error:', err);
@@ -1959,7 +1959,7 @@ async function restoreReplace(data){
     if(error) throw error;
   }
 }
-/* دمج: الإبقاء على كل شيء حالي، وإضافة الجديد فقط فوقه بدون حذف */
+/* الإبقاء على البيانات وتحديثها: تحديث السجلات المطابقة بأحدث ما ورد بالملف، وإضافة الجديد، دون حذف أي شيء */
 async function restoreMerge(data){
   for(const cat of ['clinic','surgery','nutrition']){
     const existingList = DB[cat];
@@ -1968,12 +1968,33 @@ async function restoreMerge(data){
       if(p.phone) existing = existingList.find(e=>e.phone && e.phone.trim()===String(p.phone).trim());
       if(!existing && p.name) existing = existingList.find(e=>e.name.trim().toLowerCase()===String(p.name).trim().toLowerCase());
       if(existing){
-        const existingVisitIds = new Set((existing.visits||[]).map(v=>v.id));
-        const newVisits = (p.visits||[]).filter(v=>!v.id || !existingVisitIds.has(v.id));
-        if(newVisits.length){
-          const mergedVisits = [...(existing.visits||[]), ...newVisits];
-          const { error } = await sb.from(patientsTable(cat)).update({ visits: mergedVisits }).eq('id', existing.id);
+        // دمج الزيارات: تحديث المطابقة (بنفس id) بأحدث بياناتها، وإضافة غير الموجودة كجديدة
+        const existingVisits = existing.visits || [];
+        const incomingVisits = p.visits || [];
+        const incomingById = new Map(incomingVisits.filter(v=>v.id).map(v=>[v.id, v]));
+        const mergedVisits = existingVisits.map(v => incomingById.has(v.id) ? { ...v, ...incomingById.get(v.id) } : v);
+        const existingVisitIds = new Set(existingVisits.map(v=>v.id));
+        const newVisits = incomingVisits.filter(v=>!v.id || !existingVisitIds.has(v.id));
+        mergedVisits.push(...newVisits);
+
+        // تحديث بيانات المريض الأساسية: أي حقل ورد له قيمة غير فارغة بالملف يحدَّث، وما لا قيمة له يبقى كما هو
+        const updatedFields = {};
+        ['name','phone','age','sex','address','pmh'].forEach(f=>{
+          if(p[f] !== undefined && p[f] !== null && String(p[f]).trim() !== '') updatedFields[f] = p[f];
+        });
+        const incomingDh = (p.dh !== undefined && p.dh !== null && String(p.dh).trim() !== '') ? p.dh
+                          : (p.allergy !== undefined && p.allergy !== null && String(p.allergy).trim() !== '') ? p.allergy : undefined;
+        if(incomingDh !== undefined) updatedFields.dh = incomingDh;
+
+        const changed = Object.keys(updatedFields).some(f => (existing[f]||'') !== (updatedFields[f]||''))
+          || mergedVisits.length !== existingVisits.length
+          || mergedVisits.some((v,i)=> JSON.stringify(v) !== JSON.stringify(existingVisits[i]));
+
+        if(changed){
+          const payload = { ...updatedFields, visits: mergedVisits };
+          const { error } = await sb.from(patientsTable(cat)).update(payload).eq('id', existing.id);
           if(error) throw error;
+          Object.assign(existing, updatedFields);
           existing.visits = mergedVisits;
         }
       } else {
@@ -1991,7 +2012,16 @@ async function restoreMerge(data){
   const existingMeds = DB.meds;
   for(const m of (data.meds||[])){
     const exists = existingMeds.find(e=>e.name.trim().toLowerCase()===String(m.name||'').trim().toLowerCase());
-    if(!exists){
+    if(exists){
+      const updatedFields = {};
+      if(m.dose !== undefined && m.dose !== null && String(m.dose).trim() !== '' && m.dose !== exists.dose) updatedFields.dose = m.dose;
+      if(m.notes !== undefined && m.notes !== null && String(m.notes).trim() !== '' && m.notes !== exists.notes) updatedFields.notes = m.notes;
+      if(Object.keys(updatedFields).length){
+        const { error } = await sb.from('medications').update(updatedFields).eq('id', exists.id);
+        if(error) throw error;
+        Object.assign(exists, updatedFields);
+      }
+    } else {
       const row = { name:m.name, dose:m.dose, notes:m.notes||'' };
       const { data: inserted, error } = await sb.from('medications').insert(row).select().single();
       if(error) throw error;
@@ -2534,7 +2564,7 @@ function printApptRx(apptId){
   <style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;background:#fff;}
-    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:225mm;display:flex;flex-direction:column;}
+    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:190mm;display:flex;flex-direction:column;}
     .rx-header{position:relative;min-height:88px;padding-top:2px;}
     .rx-logo-wrap{position:absolute;top:0;left:0;width:82px;height:82px;border-radius:50%;border:2px dashed #cfd8e2;display:flex;align-items:center;justify-content:center;}
     .rx-logo-circle{width:66px;height:66px;border-radius:50%;background:linear-gradient(145deg,#3b7bab,#2a5b82);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;}
