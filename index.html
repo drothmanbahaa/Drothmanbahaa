@@ -268,7 +268,7 @@ tr:last-child td{border-bottom:none;}
 .backup-card .ic{font-size:30px;margin-bottom:10px;}
 .backup-card h4{font-size:15px;color:var(--primary-dark);margin-bottom:6px;}
 .backup-card p{font-size:12.5px;margin-bottom:14px;}
-#restoreFile{display:none;}
+#restoreMergeFile,#restoreReplaceFile{display:none;}
 
 @media(max-width:860px){
   .stat-grid{grid-template-columns:repeat(2,1fr);}
@@ -423,11 +423,18 @@ tr:last-child td{border-bottom:none;}
             <button class="btn btn-primary" onclick="downloadBackup()">تنزيل النسخة الاحتياطية</button>
           </div>
           <div class="backup-card">
-            <div class="ic">⬆️</div>
-            <h4>استعادة من نسخة احتياطية</h4>
-            <p>اختر ملف نسخة احتياطية سابق. بعد اختياره ستُسأل: استبدال كامل، أو الإبقاء على البيانات وتحديثها.</p>
-            <button class="btn btn-outline" onclick="document.getElementById('restoreFile').click()">اختيار ملف الاستعادة</button>
-            <input type="file" id="restoreFile" accept="application/json" onchange="handleRestoreFile(event)">
+            <div class="ic">🔄</div>
+            <h4>الإبقاء على البيانات وتحديثها</h4>
+            <p>يبقي كل بياناتك الحالية، ويحدّث السجلات المطابقة (نفس المريض أو نفس الدواء) بأحدث ما ورد في الملف، ويضيف كل ما هو جديد (مرضى، زيارات، أدوية) — ولا يمس أي شيء آخر لا داعي لتغييره، ولا يحذف أي شيء.</p>
+            <button class="btn btn-primary" onclick="document.getElementById('restoreMergeFile').click()">اختيار ملف والإبقاء على البيانات</button>
+            <input type="file" id="restoreMergeFile" accept="application/json" onchange="handleRestoreFile(event,'merge')">
+          </div>
+          <div class="backup-card" style="border:1.6px solid #F3B4AE;">
+            <div class="ic">⚠️</div>
+            <h4 style="color:#C7362D;">استبدال كامل</h4>
+            <p>يحذف <b>كل</b> البيانات الحالية نهائيًا ويضع بدلها محتوى الملف بالضبط. يُؤخذ تلقائيًا نسخة احتياطية فورية من وضعك الحالي قبل الحذف، فيمكنك التراجع لاحقًا من هذه الصفحة.</p>
+            <button class="btn btn-danger" onclick="document.getElementById('restoreReplaceFile').click()">اختيار ملف والاستبدال الكامل</button>
+            <input type="file" id="restoreReplaceFile" accept="application/json" onchange="handleRestoreFile(event,'replace')">
           </div>
         </div>
         <div id="undoRestoreWrap" class="hidden" style="margin-top:16px;text-align:center;">
@@ -662,24 +669,16 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
-<!-- =================== MODAL: Restore choice (استبدال أو دمج) =================== -->
-<div class="modal-overlay" id="restoreChoiceModal">
+<!-- =================== MODAL: تأكيد الاستبدال الكامل (يتطلب كتابة delete) =================== -->
+<div class="modal-overlay" id="restoreReplaceConfirmModal">
   <div class="modal-box" style="max-width:440px;">
-    <div class="modal-head"><h3>كيف تريد استعادة البيانات؟</h3><button class="modal-close" onclick="cancelRestoreChoice()">✕</button></div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div class="backup-card" style="text-align:right;">
-        <h4>🔁 استبدال كامل</h4>
-        <p>يحذف كل البيانات الحالية ويضع بدلها محتوى الملف بالضبط. يُؤخذ تلقائيًا نسخة احتياطية فورية من وضعك الحالي قبل الحذف، فيمكنك التراجع لاحقًا.</p>
-        <button class="btn btn-danger" onclick="performRestore('replace')">استبدال كامل</button>
-      </div>
-      <div class="backup-card" style="text-align:right;">
-        <h4>➕ الإبقاء على البيانات وتحديثها</h4>
-        <p>يبقي كل بياناتك الحالية، ويحدّث السجلات المطابقة (نفس المريض أو نفس الدواء) بأحدث ما ورد في الملف، ويضيف كل ما هو جديد (مرضى، زيارات، أدوية) — ولا يمس أي شيء آخر لا داعي لتغييره، دون حذف أي شيء.</p>
-        <button class="btn btn-primary" onclick="performRestore('merge')">الإبقاء على البيانات وتحديثها</button>
-      </div>
-    </div>
+    <div class="modal-head"><h3 style="color:#C7362D;">⚠️ تأكيد الاستبدال الكامل</h3><button class="modal-close" onclick="cancelRestoreReplace()">✕</button></div>
+    <p style="margin-bottom:10px;">سيتم حذف <b>كل</b> بياناتك الحالية نهائيًا واستبدالها بمحتوى الملف الذي اخترته. يُؤخذ تلقائيًا نسخة احتياطية فورية من وضعك الحالي قبل الحذف، ويمكنك التراجع من صفحة النسخ الاحتياطي إذا احتجت — لكن يرجى التأكد جيدًا قبل المتابعة.</p>
+    <p style="margin-bottom:6px;">للتأكيد، اكتب كلمة <b style="direction:ltr;display:inline-block;">delete</b> في الحقل أدناه:</p>
+    <div class="field"><input type="text" id="restoreReplaceConfirmInput" class="field-ltr" placeholder="delete" autocomplete="off"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="cancelRestoreChoice()">إلغاء</button>
+      <button class="btn btn-outline" onclick="cancelRestoreReplace()">إلغاء</button>
+      <button class="btn btn-danger" onclick="confirmRestoreReplace()">تأكيد الاستبدال الكامل</button>
     </div>
   </div>
 </div>
@@ -1877,11 +1876,13 @@ function downloadBackup(){
   showToast('تم تنزيل النسخة الاحتياطية بنجاح');
 }
 let pendingRestoreData = null;
+let pendingRestoreInputId = null;
 const NIL_ID = '00000000-0000-0000-0000-000000000000';
 
-function handleRestoreFile(ev){
+function handleRestoreFile(ev, mode){
   const file = ev.target.files[0];
   if(!file) return;
+  pendingRestoreInputId = ev.target.id;
   const reader = new FileReader();
   reader.onload = function(){
     let data;
@@ -1891,19 +1892,30 @@ function handleRestoreFile(ev){
       showToast('هذا الملف لا يحتوي على بيانات نسخة احتياطية صالحة'); ev.target.value=''; return;
     }
     pendingRestoreData = data;
-    openModal('restoreChoiceModal');
+    if(mode==='merge'){
+      performRestore('merge');
+    } else {
+      document.getElementById('restoreReplaceConfirmInput').value = '';
+      openModal('restoreReplaceConfirmModal');
+    }
   };
   reader.readAsText(file);
 }
-function cancelRestoreChoice(){
+function cancelRestoreReplace(){
   pendingRestoreData = null;
-  document.getElementById('restoreFile').value = '';
-  closeModal('restoreChoiceModal');
+  const el = document.getElementById('restoreReplaceFile');
+  if(el) el.value = '';
+  closeModal('restoreReplaceConfirmModal');
+}
+function confirmRestoreReplace(){
+  const val = (document.getElementById('restoreReplaceConfirmInput').value||'').trim().toLowerCase();
+  if(val !== 'delete'){ showToast('يرجى كتابة كلمة delete بالضبط للتأكيد'); return; }
+  closeModal('restoreReplaceConfirmModal');
+  performRestore('replace');
 }
 async function performRestore(mode){
   const data = pendingRestoreData;
   if(!data) return;
-  closeModal('restoreChoiceModal');
   try{
     if(mode==='replace'){
       await snapshotBeforeReplace();
@@ -1918,7 +1930,7 @@ async function performRestore(mode){
     showToast('تعذرت عملية الاستعادة، حاول مجددًا');
   }
   pendingRestoreData = null;
-  document.getElementById('restoreFile').value = '';
+  ['restoreMergeFile','restoreReplaceFile'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   await loadDB();
   renderDashboard();
   renderBackupInfo();
