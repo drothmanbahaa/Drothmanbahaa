@@ -1584,7 +1584,7 @@ function printVisit(type, patientId, visitId){
     .rx-meta-line{display:flex;gap:46px;margin-bottom:26px;font-size:14.5px;}
     .rx-meta-line b{color:#0E3B85;}
     .rx-box{border:2px solid #1D5FC9;border-radius:16px;padding:22px 24px;min-height:300px;}
-    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:28px;font-weight:800;color:#1D5FC9;margin-bottom:18px;}
+    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:28px;font-weight:800;color:#1D5FC9;margin-bottom:18px;direction:ltr;text-align:left;}
     .rx-box-body{direction:ltr;text-align:left;font-size:15.5px;line-height:2.5;}
     .rx-box-body div{margin-bottom:6px;}
     .rx-empty{color:#9AA8BC;font-size:13.5px;}
@@ -1607,7 +1607,7 @@ function printVisit(type, patientId, visitId){
       <span><b>التاريخ :</b> ${escapeHtml(v.date)}</span>
     </div>
     <div class="rx-box">
-      <div class="rx-r">R:</div>
+      <div class="rx-r">Rx:</div>
       <div class="rx-box-body">
         ${lines.length ? lines.map(l=>`<div>${escapeHtml(l)}</div>`).join('') : '<div class="rx-empty">No treatment recorded for this visit</div>'}
       </div>
@@ -2429,7 +2429,7 @@ function printApptRx(apptId){
     .rx-meta-line{display:flex;gap:46px;margin-bottom:26px;font-size:14.5px;}
     .rx-meta-line b{color:#0E3B85;}
     .rx-box{border:2px solid #1D5FC9;border-radius:16px;padding:22px 24px;min-height:300px;}
-    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:28px;font-weight:800;color:#1D5FC9;margin-bottom:18px;}
+    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:28px;font-weight:800;color:#1D5FC9;margin-bottom:18px;direction:ltr;text-align:left;}
     .rx-box-body{direction:ltr;text-align:left;font-size:15.5px;line-height:2.5;}
     .rx-box-body div{margin-bottom:6px;}
     .rx-empty{color:#9AA8BC;font-size:13.5px;}
@@ -2452,7 +2452,7 @@ function printApptRx(apptId){
       <span><b>التاريخ :</b> ${escapeHtml(a.date)}</span>
     </div>
     <div class="rx-box">
-      <div class="rx-r">R:</div>
+      <div class="rx-r">Rx:</div>
       <div class="rx-box-body">
         ${lines.length ? lines.map(l=>`<div>${escapeHtml(l)}</div>`).join('') : '<div class="rx-empty">No treatment recorded for this visit</div>'}
       </div>
