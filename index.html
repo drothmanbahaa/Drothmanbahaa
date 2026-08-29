@@ -524,13 +524,12 @@ tr:last-child td{border-bottom:none;}
       <div class="field full"><label>Diagnosis</label><input id="examDiagnosis" type="text" placeholder="Diagnosis"></div>
       <div class="field full">
         <label>Lab results</label>
-        <div class="lab-ref" id="examLabRef"></div>
-        <textarea id="examLabResults" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+        <textarea id="examLabResults" rows="16" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
       </div>
     </div>
 
     <div class="dose-calc">
-      <div class="dose-calc-title">🧮 حاسبة الجرعة (حسب قائمة الأدوية الخاصة بك)</div>
+      <div class="dose-calc-title">🧮 قائمة العلاجات (حسب قائمة الأدوية الخاصة بك)</div>
       <div class="field">
         <label>اختر العلاج</label>
         <div class="med-search-wrap">
@@ -582,12 +581,11 @@ tr:last-child td{border-bottom:none;}
       <div class="field full"><label>Diagnosis</label><input id="pDiagnosis" type="text" placeholder="Diagnosis"></div>
       <div class="field full">
         <label>Lab results</label>
-        <div class="lab-ref" id="pLabRef"></div>
-        <textarea id="pLabResults" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+        <textarea id="pLabResults" rows="16" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
       </div>
     </div>
     <div class="dose-calc">
-      <div class="dose-calc-title">🧮 حاسبة الجرعة (حسب قائمة الأدوية الخاصة بك)</div>
+      <div class="dose-calc-title">🧮 قائمة العلاجات (حسب قائمة الأدوية الخاصة بك)</div>
       <div class="field">
         <label>اختر العلاج</label>
         <div class="med-search-wrap">
@@ -892,11 +890,6 @@ function customConfirm(message){
     noBtn.addEventListener('click', onNo);
   });
 }
-function setLabRef(refId){
-  const el = document.getElementById(refId);
-  if(el) el.textContent = LAB_TEMPLATE;
-}
-
 /* =========================================================
    AUTH — Supabase Cloud (حساب الطبيب فقط)
 ========================================================= */
@@ -1003,6 +996,7 @@ async function enterApp(role){
    NAVIGATION
 ========================================================= */
 let currentListType = 'clinic';
+let patientListLimit = 10;
 let currentView = 'home';
 const DOCTOR_VIEWS = ['appointments','dashboard','patients','meds','backup'];
 const SECRETARY_VIEWS = ['appointments','patients'];
@@ -1106,18 +1100,25 @@ function renderPatientsView(){
   document.getElementById('globalSearch').value = '';
   document.getElementById('globalSearchResults').innerHTML = '';
   document.getElementById('addPatientBtn').classList.toggle('hidden', currentRole!=='doctor');
+  patientListLimit = 10;
+  renderPatientTable();
+}
+function showMorePatients(){
+  patientListLimit += 100;
   renderPatientTable();
 }
 function renderPatientTable(){
   const q = (document.getElementById('listSearch').value||'').trim().toLowerCase();
   const wrap = document.getElementById('patientTableWrap');
-  let list = DB[currentListType].slice().sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+  let fullList = DB[currentListType].slice().sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+  let list, remaining = 0;
   if(q){
     // أثناء البحث: نبحث ضمن كامل القائمة المحمّلة (كل المرضى)، دون تحديد بعدد معيّن
-    list = list.filter(p=>p.name.toLowerCase().includes(q));
+    list = fullList.filter(p=>p.name.toLowerCase().includes(q));
   } else {
-    // بدون بحث: نعرض فقط آخر 10 مرضى (الأحدث إضافة) لتخفيف حجم القائمة المعروضة افتراضيًا
-    list = list.slice(0, 10);
+    // بدون بحث: نعرض فقط آخر عدد محدد من المرضى (الأحدث إضافة)، مع إمكانية عرض المزيد
+    list = fullList.slice(0, patientListLimit);
+    remaining = fullList.length - list.length;
   }
   if(!list.length){ wrap.innerHTML = emptyState('🗂️', q ? 'لا يوجد مريض مطابق للبحث' : 'لا يوجد مرضى في هذه القائمة بعد'); return; }
   wrap.innerHTML = `<table>
@@ -1136,7 +1137,8 @@ function renderPatientTable(){
       </tr>`;
     }).join('')}</tbody>
   </table>
-  ${!q ? `<p class="hint" style="margin-top:10px;">📌 يتم عرض آخر 10 مرضى فقط. استخدم البحث أعلاه للوصول لأي مريض آخر ضمن هذه القائمة.</p>` : ''}`;
+  ${!q ? `<p class="hint" style="margin-top:10px;">📌 يتم عرض آخر ${list.length} مرضى فقط. استخدم البحث أعلاه للوصول لأي مريض آخر ضمن هذه القائمة.</p>` : ''}
+  ${(!q && remaining>0) ? `<button class="btn btn-outline btn-block" style="margin-top:10px;" onclick="showMorePatients()">عرض المزيد (${Math.min(100, remaining)} إضافي)</button>` : ''}`;
 }
 async function deletePatient(type,id){
   if(currentRole!=='doctor') return;
@@ -1173,8 +1175,7 @@ function openPatientModal(){
   document.getElementById('pExistingSearchWrap').classList.remove('hidden');
   document.getElementById('pExistingSuggest').classList.remove('show');
   document.getElementById('pExistingSuggest').innerHTML = '';
-  setLabRef('pLabRef');
-  document.getElementById('pLabResults').value = '';
+  document.getElementById('pLabResults').value = LAB_TEMPLATE_TEXT;
   document.getElementById('pMedSuggest').classList.remove('show');
   document.getElementById('pDoseResult').innerHTML = '';
   document.getElementById('pInsertDoseBtn').style.display = 'none';
@@ -1347,13 +1348,12 @@ function renderPatientDetail(){
         <div class="field full"><label>Diagnosis</label><input type="text" id="visitDiagnosis" placeholder="Diagnosis"></div>
         <div class="field full">
           <label>Lab results</label>
-          <div class="lab-ref" id="visitLabRef"></div>
-          <textarea id="visitLabResults" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+          <textarea id="visitLabResults" rows="16" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
         </div>
       </div>
 
       <div class="dose-calc">
-        <div class="dose-calc-title">🧮 حاسبة الجرعة (حسب قائمة الأدوية الخاصة بك)</div>
+        <div class="dose-calc-title">🧮 قائمة العلاجات (حسب قائمة الأدوية الخاصة بك)</div>
         <div class="field">
           <label>اختر العلاج</label>
           <div class="med-search-wrap">
@@ -1398,9 +1398,8 @@ function renderPatientDetail(){
     document.getElementById('visitMedSuggest').classList.remove('show');
     document.getElementById('visitDoseResult').innerHTML = '';
     document.getElementById('visitInsertDoseBtn').style.display = 'none';
-    setLabRef('visitLabRef');
     if(!detailCtx.editingVisitId){
-      document.getElementById('visitLabResults').value = '';
+      document.getElementById('visitLabResults').value = LAB_TEMPLATE_TEXT;
       document.getElementById('visitTreatment').value = '';
       document.getElementById('visitNotes').value = '';
     }
@@ -1518,8 +1517,7 @@ function editPatientFromDetail(){
   document.getElementById('pPmh').value = p.pmh||'';
   document.getElementById('pDh').value = p.dh || p.allergy || '';
   ['pDiagnosis','pTreatment','pNotes','pMedSearch'].forEach(id=>document.getElementById(id).value='');
-  setLabRef('pLabRef');
-  document.getElementById('pLabResults').value = '';
+  document.getElementById('pLabResults').value = LAB_TEMPLATE_TEXT;
   document.getElementById('pMedSuggest').classList.remove('show');
   document.getElementById('pDoseResult').innerHTML = '';
   document.getElementById('pInsertDoseBtn').style.display = 'none';
@@ -1915,6 +1913,8 @@ let apptFilterMode = 'date'; // 'date' | 'all'
 let apptFilterDate = todayStr();
 const CATEGORY_LABELS = { clinic:'مرضى العيادة', surgery:'مرضى العمليات', nutrition:'مرضى التغذية' };
 const LAB_TEMPLATE = "CBC   RBS   Urea   Creatinine   ALT   AST   ALP   TSB (Direct/Indirect)   ESR   CRP   GUE   GSE   H. Pylori   RF   PT   PTT   INR   Electrolytes   HbA1c   Uric acid   Cholesterol   TG   LDL   HDL   VLDL   TSH   T3   T4   Free T3   Free T4   Vit D3   Zinc   Ca   B12   Magnesium   S. Ferritin   Insulin resistance\nHormones   Viral";
+const LAB_ITEMS = ["CBC","RBS","Urea","Creatinine","ALT","AST","ALP","TSB (Direct/Indirect)","ESR","CRP","GUE","GSE","H. Pylori","RF","PT","PTT","INR","Electrolytes","HbA1c","Uric acid","Cholesterol","TG","LDL","HDL","VLDL","TSH","T3","T4","Free T3","Free T4","Vit D3","Zinc","Ca","B12","Magnesium","S. Ferritin","Insulin resistance","Hormones","Viral"];
+const LAB_TEMPLATE_TEXT = LAB_ITEMS.map(x=>x+": ").join("\n");
 
 function apptFromRow(row){
   return {
@@ -2249,8 +2249,7 @@ function openExamModal(id){
   document.getElementById('examDh').value = a.dh||'';
   document.getElementById('examCategory').value = a.category||'clinic';
   document.getElementById('examDiagnosis').value = a.diagnosis||'';
-  setLabRef('examLabRef');
-  document.getElementById('examLabResults').value = a.labResults || '';
+  document.getElementById('examLabResults').value = a.labResults || LAB_TEMPLATE_TEXT;
   document.getElementById('examTreatment').value = a.treatment||'';
   document.getElementById('examNotes').value = a.notes||'';
   document.getElementById('examMedSearch').value = '';
