@@ -107,6 +107,13 @@ footer.site-footer{padding:24px 0;text-align:center;color:var(--text-muted);font
 .nav-btn.out{color:var(--danger);}
 .supabase-notice{background:var(--surface-2);border:1px dashed var(--line);color:var(--text-muted);font-size:12px;padding:10px 12px;border-radius:10px;margin-bottom:14px;text-align:right;}
 
+/* ---------- Offline sync indicator ---------- */
+.sync-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:99px;font-size:12px;font-weight:700;
+  background:#FBEAEA;color:#D2574F;cursor:pointer;transition:.2s;white-space:nowrap;}
+.sync-pill.hidden{display:none;}
+.sync-pill.pending{background:#FFF3D6;color:#9A6A00;}
+.sync-pill:hover{filter:brightness(0.96);}
+
 .wrap{max-width:1180px;margin:0 auto;padding:26px 24px 60px;}
 .view{display:none;animation:fadeIn .3s ease;}
 .view.active{display:block;}
@@ -142,6 +149,9 @@ footer.site-footer{padding:24px 0;text-align:center;color:var(--text-muted);font
 .badge.scheduled{background:#DCE9FB;color:#1D5FC9;}
 .badge.done{background:#E6F6EE;color:#2E9E6B;}
 .badge.cancelled{background:#FBEAEA;color:#D2574F;}
+.badge.vtype-exam{background:#DCE9FB;color:#1D5FC9;}
+.badge.vtype-review{background:#E6F6EE;color:#2E9E6B;}
+.badge.vtype-nutrition{background:#FBEAEA;color:#D2574F;}
 
 /* ---------- Panels / Tables ---------- */
 .panel{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;border:1px solid var(--line);}
@@ -175,6 +185,13 @@ tr:last-child td{border-bottom:none;}
 
 /* ---------- Dose calculator (fixed adult dose) ---------- */
 .dose-calc{background:var(--surface-2);border-radius:14px;padding:16px;margin-bottom:16px;}
+.visit-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.visit-type-box{border:2px solid transparent;border-radius:12px;padding:16px 8px;text-align:center;font-weight:800;font-size:14px;cursor:pointer;color:#fff;opacity:.55;transition:.15s;user-select:none;}
+.visit-type-box:hover{opacity:.8;}
+.visit-type-box.selected{opacity:1;box-shadow:0 4px 12px rgba(0,0,0,.18);transform:translateY(-2px);border-color:rgba(255,255,255,.6);}
+.visit-type-box.exam{background:#1D5FC9;}
+.visit-type-box.review{background:#2E9E6B;}
+.visit-type-box.nutrition{background:#D2574F;}
 .dose-calc-title{font-weight:700;color:var(--primary-dark);font-size:14px;margin-bottom:10px;}
 .dose-ok{background:var(--success-bg);color:var(--success);padding:10px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
 .dose-warning{background:var(--danger-bg);color:var(--danger);padding:10px 14px;border-radius:10px;font-size:13.5px;font-weight:700;margin-bottom:8px;}
@@ -211,6 +228,9 @@ tr:last-child td{border-bottom:none;}
 /* ---------- Rx builder ---------- */
 .rx-builder{background:var(--surface-2);border-radius:14px;padding:16px;margin-top:6px;}
 .med-search-wrap{position:relative;}
+.quick-search-box{background:var(--surface-2);border:1.5px dashed var(--primary-light);border-radius:12px;padding:10px 12px;margin-bottom:16px;}
+.quick-search-box .quick-search-title{font-size:12px;font-weight:800;color:var(--primary-dark);margin-bottom:6px;}
+.quick-search-box input{padding:8px 10px;font-size:13px;border-radius:8px;}
 .med-suggest{position:absolute;top:calc(100% + 4px);right:0;left:0;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:230px;overflow-y:auto;z-index:20;display:none;}
 .med-suggest.show{display:block;}
 .med-suggest-item{padding:10px 14px;font-size:13.5px;border-bottom:1px solid var(--line);cursor:pointer;}
@@ -254,6 +274,7 @@ tr:last-child td{border-bottom:none;}
     <div class="txt"><b>د. عثمان بهاء</b><span>الطبيب المعالج</span></div>
   </div>
   <div class="nav-links" id="navLinks"></div>
+  <div class="sync-pill hidden" id="syncStatus" onclick="processQueue(true)" title="اضغط لمحاولة المزامنة الآن"></div>
 </div>
 
 <!-- ---------- Public gateway (لا يكشف عن محتوى النظام) ---------- -->
@@ -390,10 +411,14 @@ tr:last-child td{border-bottom:none;}
           <div class="backup-card">
             <div class="ic">⬆️</div>
             <h4>استعادة من نسخة احتياطية</h4>
-            <p>اختر ملف نسخة احتياطية سابق لاستعادة البيانات. سيتم استبدال البيانات الحالية بعد التأكيد.</p>
+            <p>اختر ملف نسخة احتياطية سابق. بعد اختياره ستُسأل: استبدال كامل، أو دمج مع البيانات الحالية.</p>
             <button class="btn btn-outline" onclick="document.getElementById('restoreFile').click()">اختيار ملف الاستعادة</button>
             <input type="file" id="restoreFile" accept="application/json" onchange="handleRestoreFile(event)">
           </div>
+        </div>
+        <div id="undoRestoreWrap" class="hidden" style="margin-top:16px;text-align:center;">
+          <button class="btn btn-outline btn-sm" onclick="undoLastRestore()">↩️ تراجع عن آخر عملية استبدال</button>
+          <p class="hint" style="margin-top:6px;">متاح فقط لآخر عملية "استبدال كامل" — <span id="undoRestoreInfo"></span></p>
         </div>
         <p class="hint" style="margin-top:16px;">آخر نسخة احتياطية: <b id="lastBackupInfo">لا يوجد</b></p>
       </div>
@@ -406,36 +431,51 @@ tr:last-child td{border-bottom:none;}
   <div class="modal-box">
     <div class="modal-head"><h3 id="apptModalTitle">New booking</h3><button class="modal-close" onclick="closeModal('apptModal')">✕</button></div>
 
-    <div class="field full" id="aExistingSearchWrap">
-      <label>ابحث عن مريض مسجّل مسبقًا (اختياري)</label>
+    <div class="quick-search-box" id="aExistingSearchWrap">
+      <div class="quick-search-title">🔍 بحث سريع — هل هذا مريض مسجّل مسبقًا؟</div>
       <div class="med-search-wrap">
         <input type="text" id="aExistingSearch" placeholder="اكتب الاسم أو رقم الهاتف..." oninput="renderApptExistingPatientSuggest()" onfocus="renderApptExistingPatientSuggest()">
         <div class="med-suggest" id="aExistingSuggest"></div>
       </div>
-      <p class="hint" style="margin-top:6px;">إن اخترت مريضًا من القائمة ستُملأ بياناته تلقائيًا.</p>
     </div>
 
     <div class="form-grid">
       <div class="field full"><label>Name *</label><input id="aName" type="text" placeholder="Full name"></div>
-      <div class="field"><label>Phone</label><input id="aPhone" type="text" placeholder="07xxxxxxxxx"></div>
-      <div class="field"><label>Age</label><input id="aAge" type="text" placeholder="e.g. 34"></div>
-      <div class="field"><label>Sex</label>
-        <select id="aSex"><option value="">—</option><option value="Male">Male</option><option value="Female">Female</option></select>
+
+      <div class="field full">
+        <label>نوع الزيارة *</label>
+        <div class="visit-type-grid">
+          <div class="visit-type-box exam" data-type="exam" onclick="selectVisitType('exam')">فحص</div>
+          <div class="visit-type-box review" data-type="review" onclick="selectVisitType('review')">مراجعة</div>
+          <div class="visit-type-box nutrition" data-type="nutrition" onclick="selectVisitType('nutrition')">تغذية</div>
+        </div>
       </div>
-      <div class="field full"><label>Address</label><input id="aAddress" type="text" placeholder="Optional"></div>
-      <div class="field full"><label>PMH (Past Medical History)</label><textarea id="aPmh" placeholder="Optional"></textarea></div>
-      <div class="field full"><label>DH (Drug History)</label><textarea id="aDh" placeholder="Optional"></textarea></div>
-      <div class="field full"><label>التصنيف *</label>
-        <select id="aCategory">
-          <option value="clinic">مرضى العيادة</option>
-          <option value="surgery">مرضى العمليات</option>
-          <option value="nutrition">مرضى التغذية</option>
-        </select>
+
+      <div class="field full"><label>Date *</label><input id="aDate" type="date"></div>
+
+      <div class="field" id="aExtraDivider" style="border-top:1px dashed var(--line);padding-top:14px;margin-top:2px;grid-column:1/-1;">
+        <p class="hint" style="margin:0;">الحقول التالية يعبّئها الطبيب</p>
       </div>
-      <div class="field"><label>Date *</label><input id="aDate" type="date"></div>
-      <div class="field"><label>Time *</label><input id="aTime" type="time"></div>
-      <div class="field"><label>Status</label>
-        <select id="aStatus"><option value="مجدول">مجدول</option><option value="مكتمل">مكتمل</option><option value="ملغى">ملغى</option></select>
+      <div id="apptDoctorFields" style="display:contents;">
+        <div class="field"><label>Time</label><input id="aTime" type="time"></div>
+        <div class="field"><label>Phone</label><input id="aPhone" type="text" placeholder="07xxxxxxxxx"></div>
+        <div class="field"><label>Age</label><input id="aAge" type="text" placeholder="e.g. 34"></div>
+        <div class="field"><label>Sex</label>
+          <select id="aSex"><option value="">—</option><option value="Male">Male</option><option value="Female">Female</option></select>
+        </div>
+        <div class="field full"><label>Address</label><input id="aAddress" type="text" placeholder="Optional"></div>
+        <div class="field full"><label>PMH (Past Medical History)</label><textarea id="aPmh" placeholder="Optional"></textarea></div>
+        <div class="field full"><label>DH (Drug History)</label><textarea id="aDh" placeholder="Optional"></textarea></div>
+        <div class="field full"><label>التصنيف *</label>
+          <select id="aCategory">
+            <option value="clinic">مرضى العيادة</option>
+            <option value="surgery">مرضى العمليات</option>
+            <option value="nutrition">مرضى التغذية</option>
+          </select>
+        </div>
+        <div class="field"><label>Status</label>
+          <select id="aStatus"><option value="مجدول">مجدول</option><option value="مكتمل">مكتمل</option><option value="ملغى">ملغى</option></select>
+        </div>
       </div>
     </div>
     <div class="modal-actions">
@@ -449,6 +489,37 @@ tr:last-child td{border-bottom:none;}
 <div class="modal-overlay" id="examModal">
   <div class="modal-box wide">
     <div class="modal-head"><h3>كشف الطبيب — <span id="examPatientName"></span></h3><button class="modal-close" onclick="closeModal('examModal')">✕</button></div>
+
+    <div class="section-title">المعلومات الشخصية</div>
+
+    <div class="quick-search-box" id="examExistingSearchWrap">
+      <div class="quick-search-title">🔍 بحث سريع — هل هذا مريض مسجّل مسبقًا؟</div>
+      <div class="med-search-wrap">
+        <input type="text" id="examExistingSearch" placeholder="اكتب الاسم أو رقم الهاتف..." oninput="renderExamExistingPatientSuggest()" onfocus="renderExamExistingPatientSuggest()">
+        <div class="med-suggest" id="examExistingSuggest"></div>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field full"><label>Name *</label><input id="examName" type="text" placeholder="Full name"></div>
+      <div class="field"><label>Phone</label><input id="examPhone" type="text" placeholder="07xxxxxxxxx"></div>
+      <div class="field"><label>Age</label><input id="examAge" type="text" placeholder="e.g. 34"></div>
+      <div class="field"><label>Sex</label>
+        <select id="examSex"><option value="">—</option><option value="Male">Male</option><option value="Female">Female</option></select>
+      </div>
+      <div class="field full"><label>Address</label><input id="examAddress" type="text" placeholder="Optional"></div>
+      <div class="field full"><label>PMH (Past Medical History)</label><textarea id="examPmh" placeholder="Optional"></textarea></div>
+      <div class="field full"><label>DH (Drug History)</label><textarea id="examDh" placeholder="Optional"></textarea></div>
+      <div class="field full"><label>التصنيف</label>
+        <select id="examCategory">
+          <option value="clinic">مرضى العيادة</option>
+          <option value="surgery">مرضى العمليات</option>
+          <option value="nutrition">مرضى التغذية</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">الكشف والعلاج</div>
     <div class="form-grid">
       <div class="field full"><label>Diagnosis</label><input id="examDiagnosis" type="text" placeholder="Diagnosis"></div>
       <div class="field full">
@@ -473,6 +544,8 @@ tr:last-child td{border-bottom:none;}
 
     <div class="field full"><label>Treatment</label><textarea id="examTreatment" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
 
+    <div class="field full"><label>Notes</label><textarea id="examNotes" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
+
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('examModal')">إلغاء</button>
       <button class="btn btn-primary" onclick="saveExam()">💾 حفظ الكشف</button>
@@ -482,18 +555,18 @@ tr:last-child td{border-bottom:none;}
 
 <!-- =================== MODAL: Patient add/edit =================== -->
 <div class="modal-overlay" id="patientModal">
-  <div class="modal-box">
+  <div class="modal-box wide">
     <div class="modal-head"><h3 id="patientModalTitle">إضافة مريض</h3><button class="modal-close" onclick="closeModal('patientModal')">✕</button></div>
 
-    <div class="field full" id="pExistingSearchWrap">
-      <label>ابحث عن مريض مسجّل مسبقًا (اختياري — لتفادي التكرار)</label>
+    <div class="quick-search-box" id="pExistingSearchWrap">
+      <div class="quick-search-title">🔍 بحث سريع — هل هذا مريض مسجّل مسبقًا؟</div>
       <div class="med-search-wrap">
         <input type="text" id="pExistingSearch" placeholder="اكتب الاسم أو رقم الهاتف..." oninput="renderExistingPatientSuggest()" onfocus="renderExistingPatientSuggest()">
         <div class="med-suggest" id="pExistingSuggest"></div>
       </div>
-      <p class="hint" style="margin-top:6px;">إن اخترت مريضًا من القائمة سيُفتح ملفه مباشرة بدل إنشاء سجل جديد.</p>
     </div>
 
+    <div class="section-title">المعلومات الشخصية</div>
     <div class="form-grid">
       <div class="field full"><label>Name *</label><input id="pName" type="text" placeholder="Full name"></div>
       <div class="field"><label>Phone</label><input id="pPhone" type="text" placeholder="07xxxxxxxxx"></div>
@@ -503,6 +576,31 @@ tr:last-child td{border-bottom:none;}
       <div class="field full"><label>PMH (Past Medical History)</label><textarea id="pPmh" placeholder="Optional"></textarea></div>
       <div class="field full"><label>DH (Drug History)</label><textarea id="pDh" placeholder="Optional"></textarea></div>
     </div>
+
+    <div class="section-title" style="margin-top:18px;">الكشف والعلاج (اختياري)</div>
+    <div class="form-grid">
+      <div class="field full"><label>Diagnosis</label><input id="pDiagnosis" type="text" placeholder="Diagnosis"></div>
+      <div class="field full">
+        <label>Lab results</label>
+        <div class="lab-ref" id="pLabRef"></div>
+        <textarea id="pLabResults" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+      </div>
+    </div>
+    <div class="dose-calc">
+      <div class="dose-calc-title">🧮 حاسبة الجرعة (حسب قائمة الأدوية الخاصة بك)</div>
+      <div class="field">
+        <label>اختر العلاج</label>
+        <div class="med-search-wrap">
+          <input type="text" id="pMedSearch" placeholder="اكتب اسم الدواء..." oninput="renderPatientModalMedSuggest()" onfocus="renderPatientModalMedSuggest()">
+          <div class="med-suggest" id="pMedSuggest"></div>
+        </div>
+      </div>
+      <div id="pDoseResult"></div>
+      <button type="button" class="btn btn-outline btn-sm" style="display:none;margin-top:8px;" id="pInsertDoseBtn" onclick="insertPatientModalDose()">➕ إدراج الجرعة بالوصفة</button>
+    </div>
+    <div class="field full"><label>Treatment</label><textarea id="pTreatment" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
+    <div class="field full"><label>Notes</label><textarea id="pNotes" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
+
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('patientModal')">إلغاء</button>
       <button class="btn btn-primary" onclick="savePatient()">حفظ المريض</button>
@@ -546,14 +644,38 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+<!-- =================== MODAL: Restore choice (استبدال أو دمج) =================== -->
+<div class="modal-overlay" id="restoreChoiceModal">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-head"><h3>كيف تريد استعادة البيانات؟</h3><button class="modal-close" onclick="cancelRestoreChoice()">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="backup-card" style="text-align:right;">
+        <h4>🔁 استبدال كامل</h4>
+        <p>يحذف كل البيانات الحالية ويضع بدلها محتوى الملف بالضبط. يُؤخذ تلقائيًا نسخة احتياطية فورية من وضعك الحالي قبل الحذف، فيمكنك التراجع لاحقًا.</p>
+        <button class="btn btn-danger" onclick="performRestore('replace')">استبدال كامل</button>
+      </div>
+      <div class="backup-card" style="text-align:right;">
+        <h4>➕ دمج مع البيانات الحالية</h4>
+        <p>يبقي كل بياناتك الحالية كما هي، ويضيف فوقها ما هو جديد من الملف (مرضى وزيارات وأدوية غير موجودة مسبقًا) دون حذف أي شيء.</p>
+        <button class="btn btn-primary" onclick="performRestore('merge')">دمج مع البيانات الحالية</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="cancelRestoreChoice()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
+
 
 <script>
 /* =========================================================
    STORAGE LAYER (Supabase: patients + medications جداول سحابية)
 ========================================================= */
 const LS = {
-  lastBackup:'obc_last_backup'
+  lastBackup:'obc_last_backup',
+  preRestoreSnapshot:'obc_pre_restore_snapshot'
 };
 const LIST_META = {
   clinic:{title:'مرضى العيادة', sub:'حالات العيادة العامة والمتابعة'},
@@ -562,6 +684,128 @@ const LIST_META = {
 };
 
 let DB = { clinic:[], surgery:[], nutrition:[], meds:[] };
+
+/* =========================================================
+   OFFLINE QUEUE — يسمح للطبيب/السكرتير بالعمل بدون نت،
+   ويخزّن العمليات محليًا ليعيد إرسالها تلقائيًا عند عودة الاتصال
+========================================================= */
+const OFFLINE_QUEUE_KEY = 'obc_offline_queue';
+const DB_CACHE_KEY = 'obc_db_cache';
+const APPTS_CACHE_KEY = 'obc_appts_cache';
+let offlineQueue = [];
+let isSyncing = false;
+
+function genId(){
+  if(typeof crypto!=='undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
+    const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8);
+    return v.toString(16);
+  });
+}
+function loadOfflineQueue(){
+  try{ offlineQueue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY)) || []; }
+  catch(e){ offlineQueue = []; }
+  updateSyncBadge();
+}
+function persistOfflineQueue(){
+  try{ localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(offlineQueue)); }catch(e){}
+  updateSyncBadge();
+}
+function enqueueOp(op){
+  op.id = op.id || genId();
+  op.ts = Date.now();
+  offlineQueue.push(op);
+  persistOfflineQueue();
+}
+/* يحذف من قائمة الانتظار أي عمليات تخص سجلًا معينًا (يُستخدم عند حذف سجل أُنشئ أصلًا أوفلاين ولم يُزامَن بعد) */
+function hasQueuedInsert(kind, id){
+  return offlineQueue.some(op=> op.kind===kind && op.row && op.row.id===id);
+}
+function purgeQueuedOpsForId(id){
+  offlineQueue = offlineQueue.filter(op=> op.matchId!==id && !(op.row && op.row.id===id));
+  persistOfflineQueue();
+}
+function updateSyncBadge(){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  if(offlineQueue.length){
+    el.classList.remove('hidden'); el.classList.add('pending');
+    el.textContent = `🔄 ${offlineQueue.length} بانتظار المزامنة`;
+  } else if(typeof navigator!=='undefined' && navigator.onLine===false){
+    el.classList.remove('hidden'); el.classList.remove('pending');
+    el.textContent = '📴 غير متصل بالإنترنت';
+  } else {
+    el.classList.add('hidden');
+  }
+}
+/* يميّز خطأ انقطاع الشبكة عن خطأ حقيقي بالبيانات، حتى لا نحجز/نُسقط العمليات بالخطأ */
+function isNetworkError(err){
+  if(!err) return false;
+  if(typeof navigator!=='undefined' && navigator.onLine===false) return true;
+  const msg = ((err.message||'')+'').toLowerCase();
+  return err.name==='TypeError' || msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed') || msg.includes('network request failed');
+}
+function cacheDB(){ try{ localStorage.setItem(DB_CACHE_KEY, JSON.stringify(DB)); }catch(e){} }
+function loadCachedDB(){ try{ const raw = localStorage.getItem(DB_CACHE_KEY); if(raw) DB = JSON.parse(raw); }catch(e){} }
+function cacheAppts(){ try{ localStorage.setItem(APPTS_CACHE_KEY, JSON.stringify(APPTS)); }catch(e){} }
+function loadCachedAppts(){ try{ const raw = localStorage.getItem(APPTS_CACHE_KEY); if(raw) APPTS = JSON.parse(raw); }catch(e){} }
+
+/* ينفذ كل عملية معلّقة على Supabase الحقيقي عند توفر النت */
+async function runQueuedOp(op){
+  switch(op.kind){
+    case 'patient_insert': { const { error } = await sb.from(patientsTable(op.category)).insert(op.row); if(error) throw error; return; }
+    case 'patient_update': { const { error } = await sb.from(patientsTable(op.category)).update(op.row).eq('id', op.matchId); if(error) throw error; return; }
+    case 'patient_visits': { const { error } = await sb.from(patientsTable(op.category)).update({ visits: op.visits }).eq('id', op.matchId); if(error) throw error; return; }
+    case 'patient_delete': { const { error } = await sb.from(patientsTable(op.category)).delete().eq('id', op.matchId); if(error) throw error; return; }
+    case 'med_insert': { const { error } = await sb.from('medications').insert(op.row); if(error) throw error; return; }
+    case 'med_update': { const { error } = await sb.from('medications').update(op.row).eq('id', op.matchId); if(error) throw error; return; }
+    case 'med_delete': { const { error } = await sb.from('medications').delete().eq('id', op.matchId); if(error) throw error; return; }
+    case 'appt_insert': { const { error } = await sb.from('appointments').insert(op.row); if(error) throw error; return; }
+    case 'appt_update': { const { error } = await sb.from('appointments').update(op.row).eq('id', op.matchId); if(error) throw error; return; }
+    case 'appt_delete': { const { error } = await sb.from('appointments').delete().eq('id', op.matchId); if(error) throw error; return; }
+  }
+}
+/* يعالج قائمة الانتظار بالترتيب؛ يتوقف عند أول خطأ شبكة (النت لسا مقطوع) ويحاول لاحقًا،
+   بينما يتجاوز أي خطأ حقيقي غير متعلق بالشبكة (بعد تسجيله) حتى لا يعلّق بقية العمليات */
+async function processQueue(manual){
+  if(isSyncing) return;
+  if(!supabaseConfigured) return;
+  if(!offlineQueue.length){ if(manual) showToast('لا توجد عمليات بانتظار المزامنة'); updateSyncBadge(); return; }
+  isSyncing = true;
+  updateSyncBadge();
+  let processedAny = false;
+  while(offlineQueue.length){
+    const op = offlineQueue[0];
+    try{
+      await runQueuedOp(op);
+      offlineQueue.shift();
+      persistOfflineQueue();
+      processedAny = true;
+    }catch(err){
+      if(isNetworkError(err)){
+        break; // ما زلنا بدون نت، نتوقف ونحاول لاحقًا تلقائيًا
+      } else {
+        console.error('تعذر تنفيذ عملية معلّقة (خطأ غير متعلق بالشبكة):', op, err);
+        showToast('تعذر تنفيذ إحدى العمليات المعلّقة، راجع سجل الأخطاء بالمتصفح');
+        offlineQueue.shift();
+        persistOfflineQueue();
+      }
+    }
+  }
+  isSyncing = false;
+  updateSyncBadge();
+  if(processedAny){
+    showToast('تمت مزامنة العمليات المعلّقة بنجاح ✅');
+    try{
+      await loadDB();
+      if(document.getElementById('view-appointments')?.classList.contains('active')) await loadAppointments();
+      renderPatientTable(); renderDashboard(); renderMedTable(); renderApptTable();
+    }catch(e){}
+  }
+}
+window.addEventListener('online', ()=>{ updateSyncBadge(); processQueue(false); });
+window.addEventListener('offline', ()=>{ updateSyncBadge(); });
+setInterval(()=>{ if(typeof navigator==='undefined' || navigator.onLine) processQueue(false); }, 45000);
 
 function patientFromRow(row){
   let visits = row.visits;
@@ -579,26 +823,41 @@ function medFromRow(row){
 function patientsTable(cat){
   return cat==='surgery' ? 'patients_surgery' : cat==='nutrition' ? 'patients_nutrition' : 'patients_clinic';
 }
+async function fetchAllRows(table, orderCol, ascending){
+  let all = [];
+  let from = 0;
+  const pageSize = 1000;
+  while(true){
+    const { data, error } = await sb.from(table).select('*').order(orderCol, {ascending}).range(from, from+pageSize-1);
+    if(error) throw error;
+    all = all.concat(data||[]);
+    if(!data || data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
 async function loadDB(){
   if(!supabaseConfigured) return;
   try{
-    const [clinicRes, surgeryRes, nutritionRes, medsRes] = await Promise.all([
-      sb.from('patients_clinic').select('*').order('created_at', {ascending:false}),
-      sb.from('patients_surgery').select('*').order('created_at', {ascending:false}),
-      sb.from('patients_nutrition').select('*').order('created_at', {ascending:false}),
-      sb.from('medications').select('*').order('name', {ascending:true})
+    const [clinicRows, surgeryRows, nutritionRows, medRows] = await Promise.all([
+      fetchAllRows('patients_clinic', 'created_at', false),
+      fetchAllRows('patients_surgery', 'created_at', false),
+      fetchAllRows('patients_nutrition', 'created_at', false),
+      fetchAllRows('medications', 'name', true)
     ]);
-    if(clinicRes.error) throw clinicRes.error;
-    if(surgeryRes.error) throw surgeryRes.error;
-    if(nutritionRes.error) throw nutritionRes.error;
-    if(medsRes.error) throw medsRes.error;
-    DB.clinic = (clinicRes.data||[]).map(patientFromRow);
-    DB.surgery = (surgeryRes.data||[]).map(patientFromRow);
-    DB.nutrition = (nutritionRes.data||[]).map(patientFromRow);
-    DB.meds = (medsRes.data||[]).map(medFromRow);
+    DB.clinic = clinicRows.map(patientFromRow);
+    DB.surgery = surgeryRows.map(patientFromRow);
+    DB.nutrition = nutritionRows.map(patientFromRow);
+    DB.meds = medRows.map(medFromRow);
+    cacheDB();
   }catch(err){
     console.error('loadDB error:', err);
-    showToast('تعذر تحميل بيانات المرضى/الأدوية، تحقق من الاتصال');
+    if(isNetworkError(err)){
+      loadCachedDB();
+      showToast('لا يوجد اتصال بالإنترنت — يتم عرض آخر بيانات محفوظة محليًا');
+    } else {
+      showToast('تعذر تحميل بيانات المرضى/الأدوية، تحقق من الاتصال');
+    }
   }
 }
 function uid(){ return 'id_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8); }
@@ -853,8 +1112,14 @@ function renderPatientTable(){
   const q = (document.getElementById('listSearch').value||'').trim().toLowerCase();
   const wrap = document.getElementById('patientTableWrap');
   let list = DB[currentListType].slice().sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
-  if(q) list = list.filter(p=>p.name.toLowerCase().includes(q));
-  if(!list.length){ wrap.innerHTML = emptyState('🗂️','لا يوجد مرضى في هذه القائمة بعد'); return; }
+  if(q){
+    // أثناء البحث: نبحث ضمن كامل القائمة المحمّلة (كل المرضى)، دون تحديد بعدد معيّن
+    list = list.filter(p=>p.name.toLowerCase().includes(q));
+  } else {
+    // بدون بحث: نعرض فقط آخر 10 مرضى (الأحدث إضافة) لتخفيف حجم القائمة المعروضة افتراضيًا
+    list = list.slice(0, 10);
+  }
+  if(!list.length){ wrap.innerHTML = emptyState('🗂️', q ? 'لا يوجد مريض مطابق للبحث' : 'لا يوجد مرضى في هذه القائمة بعد'); return; }
   wrap.innerHTML = `<table>
     <thead><tr><th>الاسم</th><th>العمر</th><th>الهاتف</th><th>آخر زيارة</th><th></th></tr></thead>
     <tbody>${list.map(p=>{
@@ -870,24 +1135,32 @@ function renderPatientTable(){
         </div></td>
       </tr>`;
     }).join('')}</tbody>
-  </table>`;
+  </table>
+  ${!q ? `<p class="hint" style="margin-top:10px;">📌 يتم عرض آخر 10 مرضى فقط. استخدم البحث أعلاه للوصول لأي مريض آخر ضمن هذه القائمة.</p>` : ''}`;
 }
 async function deletePatient(type,id){
   if(currentRole!=='doctor') return;
   if(!(await customConfirm('هل أنت متأكد من حذف هذا المريض؟ سيتم حذف كل زياراته أيضًا.'))) return;
-  try{
-    const { data, error } = await sb.from(patientsTable(type)).delete().eq('id', id).select();
-    if(error) throw error;
-    if(!data || !data.length){ showToast('لم يتم الحذف — تحقق من الصلاحيات أو الاتصال'); return; }
-  }catch(err){
-    console.error('deletePatient error:', err);
-    showToast('تعذر حذف المريض');
-    return;
+  let queued = false;
+  if(hasQueuedInsert('patient_insert', id)){
+    // المريض أُنشئ أوفلاين ولم يُزامَن بعد — نحذف عملياته المعلّقة بدل إرسال طلب حذف لسجل غير موجود بالخادم
+    purgeQueuedOpsForId(id);
+  } else {
+    try{
+      const { data, error } = await sb.from(patientsTable(type)).delete().eq('id', id).select();
+      if(error) throw error;
+      if(!data || !data.length){ showToast('لم يتم الحذف — تحقق من الصلاحيات أو الاتصال'); return; }
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('deletePatient error:', err); showToast('تعذر حذف المريض'); return; }
+      enqueueOp({ kind:'patient_delete', category:type, matchId:id });
+      queued = true;
+    }
   }
   DB[type] = DB[type].filter(p=>p.id!==id);
+  cacheDB();
   renderPatientTable();
   renderDashboard();
-  showToast('تم حذف المريض');
+  showToast(queued ? '📴 لا يوجد اتصال — سيُحذف المريض من الخادم عند عودة الإنترنت' : 'تم حذف المريض');
 }
 
 /* ---- add patient modal ---- */
@@ -895,11 +1168,16 @@ let editingPatient = null;
 function openPatientModal(){
   editingPatient = null;
   document.getElementById('patientModalTitle').textContent = 'إضافة مريض إلى: ' + LIST_META[currentListType].title;
-  ['pName','pPhone','pAge','pAddress','pPmh','pDh','pExistingSearch'].forEach(id=>document.getElementById(id).value='');
+  ['pName','pPhone','pAge','pAddress','pPmh','pDh','pExistingSearch','pDiagnosis','pTreatment','pNotes','pMedSearch'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('pSex').value = '';
   document.getElementById('pExistingSearchWrap').classList.remove('hidden');
   document.getElementById('pExistingSuggest').classList.remove('show');
   document.getElementById('pExistingSuggest').innerHTML = '';
+  setLabRef('pLabRef');
+  document.getElementById('pLabResults').value = '';
+  document.getElementById('pMedSuggest').classList.remove('show');
+  document.getElementById('pDoseResult').innerHTML = '';
+  document.getElementById('pInsertDoseBtn').style.display = 'none';
   openModal('patientModal');
 }
 function renderExistingPatientSuggest(){
@@ -930,6 +1208,43 @@ function selectExistingPatient(cat, id){
   showView('patients');
   openPatientDetail(cat, id);
 }
+function renderPatientModalMedSuggest(){
+  const q = (document.getElementById('pMedSearch').value||'').trim().toLowerCase();
+  const box = document.getElementById('pMedSuggest');
+  if(!q){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const matches = DB.meds.filter(m=>m.name.toLowerCase().includes(q)).slice(0,8);
+  if(!matches.length){
+    box.innerHTML = `<div class="med-suggest-item" style="color:var(--text-muted);">لا يوجد دواء مطابق. أضفه من قائمة الأدوية.</div>`;
+    box.classList.add('show');
+    return;
+  }
+  box.innerHTML = matches.map(m=>`
+    <div class="med-suggest-item" onclick="calcPatientModalDose('${m.id}')">
+      ${escapeHtml(m.name)} <small>${escapeHtml(m.dose)}</small>
+    </div>`).join('');
+  box.classList.add('show');
+}
+function calcPatientModalDose(id){
+  const resultEl = document.getElementById('pDoseResult');
+  const insertBtn = document.getElementById('pInsertDoseBtn');
+  const med = DB.meds.find(m=>m.id===id);
+  if(!med){ resultEl.innerHTML=''; insertBtn.style.display='none'; return; }
+  document.getElementById('pMedSearch').value = med.name;
+  document.getElementById('pMedSuggest').classList.remove('show');
+  let html = `<div class="dose-ok">الجرعة الثابتة: ${escapeHtml(med.dose)}</div>`;
+  if(med.notes) html += `<div class="dose-hint">${escapeHtml(med.notes)}</div>`;
+  resultEl.innerHTML = html;
+  insertBtn.style.display = 'inline-flex';
+  insertBtn.dataset.text = med.notes ? `${med.name}: ${med.dose} — ${med.notes}` : `${med.name}: ${med.dose}`;
+}
+function insertPatientModalDose(){
+  const btn = document.getElementById('pInsertDoseBtn');
+  const ta = document.getElementById('pTreatment');
+  const line = btn.dataset.text;
+  if(!line) return;
+  ta.value = ta.value.trim() ? (ta.value.trim() + '\n' + line) : line;
+  showToast('تمت إضافة الجرعة للوصفة');
+}
 async function savePatient(){
   const name = document.getElementById('pName').value.trim();
   if(!name){ showToast('يرجى إدخال اسم المريض'); return; }
@@ -942,27 +1257,49 @@ async function savePatient(){
     pmh: document.getElementById('pPmh').value.trim(),
     dh: document.getElementById('pDh').value.trim()
   };
-  try{
-    if(editingPatient){
+  const diagnosis = document.getElementById('pDiagnosis').value.trim();
+  const labResults = document.getElementById('pLabResults').value.trim();
+  const treatment = document.getElementById('pTreatment').value.trim();
+  const examNotes = document.getElementById('pNotes').value.trim();
+  const hasExamContent = diagnosis || treatment || labResults || examNotes;
+  let savedPatient = null;
+  let queued = false;
+  if(editingPatient){
+    try{
       const { error } = await sb.from(patientsTable(currentListType)).update(row).eq('id', editingPatient.id);
       if(error) throw error;
-      const idx = DB[currentListType].findIndex(p=>p.id===editingPatient.id);
-      if(idx>-1) DB[currentListType][idx] = { ...DB[currentListType][idx], ...row };
-    } else {
-      row.visits = [];
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('savePatient error:', err); showToast('تعذر حفظ بيانات المريض'); return; }
+      enqueueOp({ kind:'patient_update', category:currentListType, matchId:editingPatient.id, row:{...row} });
+      queued = true;
+    }
+    const idx = DB[currentListType].findIndex(p=>p.id===editingPatient.id);
+    if(idx>-1){ DB[currentListType][idx] = { ...DB[currentListType][idx], ...row }; savedPatient = DB[currentListType][idx]; }
+  } else {
+    row.id = genId();
+    row.visits = [];
+    try{
       const { data, error } = await sb.from(patientsTable(currentListType)).insert(row).select().single();
       if(error) throw error;
-      DB[currentListType].push(patientFromRow(data));
+      savedPatient = patientFromRow(data);
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('savePatient error:', err); showToast('تعذر حفظ بيانات المريض'); return; }
+      enqueueOp({ kind:'patient_insert', category:currentListType, row:{...row} });
+      savedPatient = patientFromRow({ ...row, created_at: new Date().toISOString() });
+      queued = true;
     }
-  }catch(err){
-    console.error('savePatient error:', err);
-    showToast('تعذر حفظ بيانات المريض');
-    return;
+    DB[currentListType].push(savedPatient);
   }
+  if(hasExamContent && savedPatient){
+    savedPatient.visits = savedPatient.visits || [];
+    savedPatient.visits.push({ id: uid(), date: todayStr(), diagnosis, labResults, treatment, notes: examNotes });
+    await persistPatientVisits(currentListType, savedPatient);
+  }
+  cacheDB();
   closeModal('patientModal');
   renderPatientTable();
   renderDashboard();
-  showToast('تم حفظ بيانات المريض');
+  showToast(queued ? '📴 لا يوجد اتصال — تم الحفظ محليًا وستتم المزامنة تلقائيًا عند عودة الإنترنت' : ('تم حفظ بيانات المريض' + (hasExamContent ? ' والزيارة' : '')));
 }
 
 /* =========================================================
@@ -1030,6 +1367,8 @@ function renderPatientDetail(){
 
       <div class="field full"><label>Treatment</label><textarea id="visitTreatment" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
 
+      <div class="field full"><label>Notes</label><textarea id="visitNotes" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
+
       <div class="modal-actions">
         ${detailCtx.editingVisitId ? `<button class="btn btn-outline" onclick="cancelEditVisit()">إلغاء التعديل</button>` : ''}
         <button class="btn btn-primary" onclick="saveVisit()">💾 ${detailCtx.editingVisitId ? 'تحديث الزيارة' : 'حفظ الزيارة'}</button>
@@ -1050,6 +1389,7 @@ function renderPatientDetail(){
         <div class="vdiag"><b>Diagnosis:</b> ${escapeHtml(v.diagnosis||'—')}</div>
         ${v.labResults ? `<div class="vdiag"><b>Lab results:</b> ${escapeHtml(v.labResults)}</div>` : ''}
         <div class="vdiag"><b>Treatment:</b> ${v.treatment ? escapeHtml(v.treatment) : '<span class="hint">لا يوجد</span>'}</div>
+        ${v.notes ? `<div class="vdiag"><b>Notes:</b> ${escapeHtml(v.notes)}</div>` : ''}
       </div>
     `).join('') : emptyState('🕘','لا توجد زيارات سابقة لهذا المريض')}
   `;
@@ -1059,7 +1399,11 @@ function renderPatientDetail(){
     document.getElementById('visitDoseResult').innerHTML = '';
     document.getElementById('visitInsertDoseBtn').style.display = 'none';
     setLabRef('visitLabRef');
-    if(!detailCtx.editingVisitId) document.getElementById('visitLabResults').value = '';
+    if(!detailCtx.editingVisitId){
+      document.getElementById('visitLabResults').value = '';
+      document.getElementById('visitTreatment').value = '';
+      document.getElementById('visitNotes').value = '';
+    }
   }
 }
 function renderVisitMedSuggest(){
@@ -1110,21 +1454,37 @@ function editVisit(visitId){
   document.getElementById('visitDiagnosis').value = v.diagnosis || '';
   document.getElementById('visitLabResults').value = v.labResults || '';
   document.getElementById('visitTreatment').value = v.treatment || '';
+  document.getElementById('visitNotes').value = v.notes || '';
 }
 function cancelEditVisit(){
   detailCtx.editingVisitId = null;
   renderPatientDetail();
 }
 async function persistPatientVisits(category, patient){
+  // إذا كان المريض نفسه لا يزال بانتظار المزامنة (أُنشئ أوفلاين)، لا داعي لطلب شبكة منفصل الآن
+  if(hasQueuedInsert('patient_insert', patient.id)){
+    const pendingInsert = offlineQueue.find(op=>op.kind==='patient_insert' && op.row && op.row.id===patient.id);
+    if(pendingInsert) pendingInsert.row.visits = patient.visits;
+    persistOfflineQueue();
+    cacheDB();
+    return true;
+  }
   try{
     const { data, error } = await sb.from(patientsTable(category)).update({ visits: patient.visits }).eq('id', patient.id).select();
     if(error) throw error;
     if(!data || !data.length){ showToast('لم يتم الحفظ — تحقق من الصلاحيات أو الاتصال'); return false; }
+    cacheDB();
     return true;
   }catch(err){
-    console.error('persistPatientVisits error:', err);
-    showToast('تعذر حفظ الزيارة، تحقق من الاتصال');
-    return false;
+    if(!isNetworkError(err)){
+      console.error('persistPatientVisits error:', err);
+      showToast('تعذر حفظ الزيارة، تحقق من الاتصال');
+      return false;
+    }
+    enqueueOp({ kind:'patient_visits', category, matchId:patient.id, visits: patient.visits });
+    cacheDB();
+    showToast('📴 لا يوجد اتصال — تم حفظ الزيارة محليًا وستُزامن تلقائيًا لاحقًا');
+    return true;
   }
 }
 async function deleteVisit(visitId){
@@ -1157,6 +1517,12 @@ function editPatientFromDetail(){
   document.getElementById('pAddress').value = p.address||'';
   document.getElementById('pPmh').value = p.pmh||'';
   document.getElementById('pDh').value = p.dh || p.allergy || '';
+  ['pDiagnosis','pTreatment','pNotes','pMedSearch'].forEach(id=>document.getElementById(id).value='');
+  setLabRef('pLabRef');
+  document.getElementById('pLabResults').value = '';
+  document.getElementById('pMedSuggest').classList.remove('show');
+  document.getElementById('pDoseResult').innerHTML = '';
+  document.getElementById('pInsertDoseBtn').style.display = 'none';
   openModal('patientModal');
 }
 async function deletePatientAndCloseDetail(type, id){
@@ -1172,15 +1538,16 @@ async function saveVisit(){
   const diagnosis = document.getElementById('visitDiagnosis').value.trim();
   const labResults = document.getElementById('visitLabResults').value.trim();
   const treatment = document.getElementById('visitTreatment').value.trim();
+  const notes = document.getElementById('visitNotes').value.trim();
   if(!diagnosis && !treatment){ showToast('يرجى إدخال التشخيص أو العلاج على الأقل'); return; }
   if(!p.visits) p.visits = [];
   const backup = p.visits.slice();
   if(detailCtx.editingVisitId){
     const idx = p.visits.findIndex(v=>v.id===detailCtx.editingVisitId);
-    if(idx>-1) p.visits[idx] = { ...p.visits[idx], date, diagnosis, labResults, treatment };
+    if(idx>-1) p.visits[idx] = { ...p.visits[idx], date, diagnosis, labResults, treatment, notes };
     detailCtx.editingVisitId = null;
   } else {
-    p.visits.push({ id:uid(), date, diagnosis, labResults, treatment });
+    p.visits.push({ id:uid(), date, diagnosis, labResults, treatment, notes });
   }
   const ok = await persistPatientVisits(detailCtx.type, p);
   if(!ok){ p.visits = backup; return; }
@@ -1249,6 +1616,7 @@ function printVisit(type, patientId, visitId){
       <div class="rx-symbol">RX/</div>
       ${lines.length ? '<ul class="rx-list">'+lines.map(l=>`<li>${escapeHtml(l)}</li>`).join('')+'</ul>' : '<div class="rx-empty">No treatment recorded for this visit</div>'}
     </div>
+    ${v.notes ? `<div class="rx-lab"><b>Notes:</b> ${escapeHtml(v.notes)}</div>` : ''}
     <div class="rx-sign"><div class="line"></div>توقيع وختم الطبيب</div>
     <div class="rx-footer">طُبعت بتاريخ ${printedAt}</div>
   </div>
@@ -1287,41 +1655,57 @@ async function saveMed(){
     name, dose,
     notes: document.getElementById('mNotes').value.trim()
   };
-  try{
-    if(editingMed){
+  let queued = false;
+  if(editingMed){
+    try{
       const { error } = await sb.from('medications').update(row).eq('id', editingMed.id);
       if(error) throw error;
-      const idx = DB.meds.findIndex(x=>x.id===editingMed.id);
-      if(idx>-1) DB.meds[idx] = { ...DB.meds[idx], ...row };
-    } else {
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('saveMed error:', err); showToast('تعذر حفظ الدواء'); return; }
+      enqueueOp({ kind:'med_update', matchId:editingMed.id, row:{...row} });
+      queued = true;
+    }
+    const idx = DB.meds.findIndex(x=>x.id===editingMed.id);
+    if(idx>-1) DB.meds[idx] = { ...DB.meds[idx], ...row };
+  } else {
+    row.id = genId();
+    try{
       const { data, error } = await sb.from('medications').insert(row).select().single();
       if(error) throw error;
       DB.meds.push(medFromRow(data));
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('saveMed error:', err); showToast('تعذر حفظ الدواء'); return; }
+      enqueueOp({ kind:'med_insert', row:{...row} });
+      DB.meds.push(medFromRow(row));
+      queued = true;
     }
-  }catch(err){
-    console.error('saveMed error:', err);
-    showToast('تعذر حفظ الدواء');
-    return;
   }
+  cacheDB();
   closeModal('medModal');
   renderMedTable();
   renderDashboard();
-  showToast('تم حفظ الدواء');
+  showToast(queued ? '📴 لا يوجد اتصال — تم الحفظ محليًا وستتم المزامنة لاحقًا' : 'تم حفظ الدواء');
 }
 async function deleteMed(id){
   if(!(await customConfirm('هل تريد حذف هذا الدواء من القائمة؟'))) return;
-  try{
-    const { data, error } = await sb.from('medications').delete().eq('id', id).select();
-    if(error) throw error;
-    if(!data || !data.length){ showToast('لم يتم الحذف — تحقق من الصلاحيات أو الاتصال'); return; }
-  }catch(err){
-    console.error('deleteMed error:', err);
-    showToast('تعذر حذف الدواء');
-    return;
+  let queued = false;
+  if(hasQueuedInsert('med_insert', id)){
+    purgeQueuedOpsForId(id);
+  } else {
+    try{
+      const { data, error } = await sb.from('medications').delete().eq('id', id).select();
+      if(error) throw error;
+      if(!data || !data.length){ showToast('لم يتم الحذف — تحقق من الصلاحيات أو الاتصال'); return; }
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('deleteMed error:', err); showToast('تعذر حذف الدواء'); return; }
+      enqueueOp({ kind:'med_delete', matchId:id });
+      queued = true;
+    }
   }
   DB.meds = DB.meds.filter(m=>m.id!==id);
+  cacheDB();
   renderMedTable();
-  showToast('تم حذف الدواء');
+  showToast(queued ? '📴 لا يوجد اتصال — سيُحذف الدواء من الخادم عند عودة الإنترنت' : 'تم حذف الدواء');
 }
 function renderMedTable(){
   const wrap = document.getElementById('medTableWrap');
@@ -1350,6 +1734,17 @@ function renderMedTable(){
 function renderBackupInfo(){
   const info = localStorage.getItem(LS.lastBackup);
   document.getElementById('lastBackupInfo').textContent = info || 'لا يوجد';
+  const snapshotRaw = localStorage.getItem(LS.preRestoreSnapshot);
+  const wrap = document.getElementById('undoRestoreWrap');
+  if(snapshotRaw){
+    try{
+      const snap = JSON.parse(snapshotRaw);
+      document.getElementById('undoRestoreInfo').textContent = 'تم أخذها في ' + (snap.takenAt || '');
+      wrap.classList.remove('hidden');
+    }catch(e){ wrap.classList.add('hidden'); }
+  } else {
+    wrap.classList.add('hidden');
+  }
 }
 function downloadBackup(){
   const payload = {
@@ -1369,58 +1764,147 @@ function downloadBackup(){
   renderBackupInfo();
   showToast('تم تنزيل النسخة الاحتياطية بنجاح');
 }
+let pendingRestoreData = null;
+const NIL_ID = '00000000-0000-0000-0000-000000000000';
+
 function handleRestoreFile(ev){
   const file = ev.target.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = async function(){
+  reader.onload = function(){
     let data;
     try{ data = JSON.parse(reader.result); }
     catch(e){ showToast('تعذر قراءة الملف، تأكد أنه ملف نسخة احتياطية صحيح'); ev.target.value=''; return; }
     if(!data || (!data.clinic && !data.surgery && !data.nutrition && !data.meds)){
       showToast('هذا الملف لا يحتوي على بيانات نسخة احتياطية صالحة'); ev.target.value=''; return;
     }
-    const ok = await customConfirm('سيتم استبدال جميع بيانات القوائم الثلاث والأدوية الحالية في قاعدة البيانات السحابية ببيانات هذا الملف. هل تريد المتابعة؟');
-    if(!ok){ ev.target.value=''; return; }
-    const NIL = '00000000-0000-0000-0000-000000000000';
-    try{
-      const { error: delCErr } = await sb.from('patients_clinic').delete().neq('id', NIL);
-      if(delCErr) throw delCErr;
-      const { error: delSErr } = await sb.from('patients_surgery').delete().neq('id', NIL);
-      if(delSErr) throw delSErr;
-      const { error: delNErr } = await sb.from('patients_nutrition').delete().neq('id', NIL);
-      if(delNErr) throw delNErr;
-      const { error: delMErr } = await sb.from('medications').delete().neq('id', NIL);
-      if(delMErr) throw delMErr;
+    pendingRestoreData = data;
+    openModal('restoreChoiceModal');
+  };
+  reader.readAsText(file);
+}
+function cancelRestoreChoice(){
+  pendingRestoreData = null;
+  document.getElementById('restoreFile').value = '';
+  closeModal('restoreChoiceModal');
+}
+async function performRestore(mode){
+  const data = pendingRestoreData;
+  if(!data) return;
+  closeModal('restoreChoiceModal');
+  try{
+    if(mode==='replace'){
+      await snapshotBeforeReplace();
+      await restoreReplace(data);
+      showToast('تم الاستبدال بنجاح. يمكنك التراجع من صفحة النسخ الاحتياطي إذا احتجت.');
+    } else {
+      await restoreMerge(data);
+      showToast('تم دمج البيانات بنجاح، ولم يُحذف أي شيء من بياناتك الحالية.');
+    }
+  }catch(err){
+    console.error('performRestore error:', err);
+    showToast('تعذرت عملية الاستعادة، حاول مجددًا');
+  }
+  pendingRestoreData = null;
+  document.getElementById('restoreFile').value = '';
+  await loadDB();
+  renderDashboard();
+  renderBackupInfo();
+}
+/* لقطة فورية من الوضع الحالي قبل الاستبدال الكامل، لإتاحة التراجع لاحقًا */
+async function snapshotBeforeReplace(){
+  const snapshot = {
+    clinic: DB.clinic, surgery: DB.surgery, nutrition: DB.nutrition, meds: DB.meds,
+    takenAt: new Date().toLocaleString('ar-EG')
+  };
+  try{ localStorage.setItem(LS.preRestoreSnapshot, JSON.stringify(snapshot)); }
+  catch(e){ console.warn('تعذر حفظ لقطة التراجع محليًا:', e); }
+}
+async function restoreReplace(data){
+  const { error: delCErr } = await sb.from('patients_clinic').delete().neq('id', NIL_ID);
+  if(delCErr) throw delCErr;
+  const { error: delSErr } = await sb.from('patients_surgery').delete().neq('id', NIL_ID);
+  if(delSErr) throw delSErr;
+  const { error: delNErr } = await sb.from('patients_nutrition').delete().neq('id', NIL_ID);
+  if(delNErr) throw delNErr;
+  const { error: delMErr } = await sb.from('medications').delete().neq('id', NIL_ID);
+  if(delMErr) throw delMErr;
 
-      for(const cat of ['clinic','surgery','nutrition']){
-        const rows = (data[cat]||[]).map(p=>({
+  for(const cat of ['clinic','surgery','nutrition']){
+    const rows = (data[cat]||[]).map(p=>({
+      name: p.name, phone: p.phone||'', age: p.age||'',
+      sex: p.sex||'', address: p.address||'', pmh: p.pmh||'', dh: p.dh||p.allergy||'',
+      visits: p.visits || []
+    }));
+    if(rows.length){
+      const { error } = await sb.from(patientsTable(cat)).insert(rows);
+      if(error) throw error;
+    }
+  }
+  const medRows = (data.meds||[]).map(m=>({ name:m.name, dose:m.dose, notes:m.notes||'' }));
+  if(medRows.length){
+    const { error } = await sb.from('medications').insert(medRows);
+    if(error) throw error;
+  }
+}
+/* دمج: الإبقاء على كل شيء حالي، وإضافة الجديد فقط فوقه بدون حذف */
+async function restoreMerge(data){
+  for(const cat of ['clinic','surgery','nutrition']){
+    const existingList = DB[cat];
+    for(const p of (data[cat]||[])){
+      let existing = null;
+      if(p.phone) existing = existingList.find(e=>e.phone && e.phone.trim()===String(p.phone).trim());
+      if(!existing && p.name) existing = existingList.find(e=>e.name.trim().toLowerCase()===String(p.name).trim().toLowerCase());
+      if(existing){
+        const existingVisitIds = new Set((existing.visits||[]).map(v=>v.id));
+        const newVisits = (p.visits||[]).filter(v=>!v.id || !existingVisitIds.has(v.id));
+        if(newVisits.length){
+          const mergedVisits = [...(existing.visits||[]), ...newVisits];
+          const { error } = await sb.from(patientsTable(cat)).update({ visits: mergedVisits }).eq('id', existing.id);
+          if(error) throw error;
+          existing.visits = mergedVisits;
+        }
+      } else {
+        const row = {
           name: p.name, phone: p.phone||'', age: p.age||'',
           sex: p.sex||'', address: p.address||'', pmh: p.pmh||'', dh: p.dh||p.allergy||'',
           visits: p.visits || []
-        }));
-        if(rows.length){
-          const { error } = await sb.from(patientsTable(cat)).insert(rows);
-          if(error) throw error;
-        }
-      }
-      const medRows = (data.meds||[]).map(m=>({ name:m.name, dose:m.dose, notes:m.notes||'' }));
-      if(medRows.length){
-        const { error } = await sb.from('medications').insert(medRows);
+        };
+        const { data: inserted, error } = await sb.from(patientsTable(cat)).insert(row).select().single();
         if(error) throw error;
+        existingList.push(patientFromRow(inserted));
       }
-    }catch(err){
-      console.error('restore error:', err);
-      showToast('تعذرت عملية الاستعادة، حاول مجددًا');
-      ev.target.value = '';
-      return;
     }
-    await loadDB();
-    renderDashboard();
-    showToast('تمت استعادة البيانات بنجاح');
-    ev.target.value = '';
-  };
-  reader.readAsText(file);
+  }
+  const existingMeds = DB.meds;
+  for(const m of (data.meds||[])){
+    const exists = existingMeds.find(e=>e.name.trim().toLowerCase()===String(m.name||'').trim().toLowerCase());
+    if(!exists){
+      const row = { name:m.name, dose:m.dose, notes:m.notes||'' };
+      const { data: inserted, error } = await sb.from('medications').insert(row).select().single();
+      if(error) throw error;
+      existingMeds.push(medFromRow(inserted));
+    }
+  }
+}
+async function undoLastRestore(){
+  const raw = localStorage.getItem(LS.preRestoreSnapshot);
+  if(!raw){ showToast('لا توجد عملية استبدال يمكن التراجع عنها'); return; }
+  let snap;
+  try{ snap = JSON.parse(raw); }catch(e){ showToast('تعذرت قراءة لقطة التراجع'); return; }
+  if(!(await customConfirm('سيتم استرجاع الوضع كما كان قبل آخر عملية استبدال، وحذف ما تم استبداله به الآن. متابعة؟'))) return;
+  try{
+    await restoreReplace(snap);
+  }catch(err){
+    console.error('undoLastRestore error:', err);
+    showToast('تعذر التراجع، حاول مجددًا');
+    return;
+  }
+  localStorage.removeItem(LS.preRestoreSnapshot);
+  await loadDB();
+  renderDashboard();
+  renderBackupInfo();
+  showToast('تم التراجع بنجاح وإرجاع الوضع السابق');
 }
 
 /* =========================================================
@@ -1437,22 +1921,36 @@ function apptFromRow(row){
     id: row.id, name: row.patient_name, phone: row.phone,
     age: row.age||'', sex: row.sex||'', address: row.address||'',
     pmh: row.pmh||'', dh: row.dh||'',
-    category: row.category||'clinic',
+    category: row.category||'clinic', visitType: row.visit_type||'',
     date: row.appt_date, time: (row.appt_time||'').slice(0,5),
     status: row.status||'مجدول', queueOrder: row.queue_order,
     diagnosis: row.diagnosis||'', labResults: row.lab_results||'',
-    treatment: row.treatment||''
+    treatment: row.treatment||'', notes: row.notes||''
   };
 }
 async function loadAppointments(){
   if(!supabaseConfigured) return;
   try{
-    const { data, error } = await sb.from('appointments').select('*').order('appt_date',{ascending:true}).order('appt_time',{ascending:true});
-    if(error) throw error;
-    APPTS = (data||[]).map(apptFromRow);
+    let all = [];
+    let from = 0;
+    const pageSize = 1000;
+    while(true){
+      const { data, error } = await sb.from('appointments').select('*').order('appt_date',{ascending:true}).order('appt_time',{ascending:true}).range(from, from+pageSize-1);
+      if(error) throw error;
+      all = all.concat(data||[]);
+      if(!data || data.length < pageSize) break;
+      from += pageSize;
+    }
+    APPTS = all.map(apptFromRow);
+    cacheAppts();
   }catch(err){
-    showToast('تعذر تحميل الحجوزات، تحقق من الاتصال');
-    APPTS = [];
+    if(isNetworkError(err)){
+      loadCachedAppts();
+      showToast('لا يوجد اتصال بالإنترنت — يتم عرض آخر مواعيد محفوظة محليًا');
+    } else {
+      showToast('تعذر تحميل الحجوزات، تحقق من الاتصال');
+      APPTS = [];
+    }
   }
 }
 function onApptDateFilterChange(){
@@ -1484,20 +1982,6 @@ function nextQueueOrder(date){
   if(!todays.length) return 0;
   return Math.max(...todays.map(a=> a.queueOrder ?? -1)) + 1;
 }
-async function checkInAppt(id){
-  const appt = APPTS.find(a=>a.id===id);
-  if(!appt || appt.queueOrder!=null) return;
-  const order = nextQueueOrder(appt.date);
-  try{
-    const { error } = await sb.from('appointments').update({ queue_order: order }).eq('id', id);
-    if(error) throw error;
-  }catch(err){
-    showToast('تعذر تسجيل الحضور');
-    return;
-  }
-  showToast('تم تسجيل الحضور — الرقم: ' + (order+1));
-  await renderAppointmentsView();
-}
 function renderApptTable(){
   const wrap = document.getElementById('apptTableWrap');
   const sub = document.getElementById('apptSub');
@@ -1514,9 +1998,13 @@ function renderApptTable(){
   if(!list.length){ wrap.innerHTML = emptyState('📅','لا توجد حجوزات في هذا القسم'); return; }
 
   if(isTodayView){
-    const checkedIn = list.filter(a=>a.queueOrder!=null).sort((a,b)=>a.queueOrder-b.queueOrder);
-    const waiting = list.filter(a=>a.queueOrder==null).sort((a,b)=> (a.time||'')<(b.time||'') ? -1 : 1);
-    list = [...checkedIn, ...waiting];
+    list = list.slice().sort((a,b)=>{
+      const qa = a.queueOrder, qb = b.queueOrder;
+      if(qa!=null && qb!=null) return qa-qb;
+      if(qa!=null) return -1;
+      if(qb!=null) return 1;
+      return (a.time||'') < (b.time||'') ? -1 : 1;
+    });
     renderApptRows(wrap, list, true);
   } else {
     renderApptRows(wrap, list, false);
@@ -1526,14 +2014,12 @@ function renderApptRows(wrap, list, showQueue){
   const isDoctor = currentRole==='doctor';
   wrap.innerHTML = list.map(a=>{
     let queueBadge = '';
-    if(showQueue){
-      queueBadge = a.queueOrder!=null
-        ? `<span class="queue-num">${a.queueOrder+1}</span>`
-        : `<button class="icon-btn" onclick="checkInAppt('${a.id}')">تسجيل الحضور</button>`;
+    if(showQueue && a.queueOrder!=null){
+      queueBadge = `<span class="queue-num">${a.queueOrder+1}</span>`;
     }
     return `<div class="appt-card">
       <div class="appt-card-top">
-        <div class="appt-card-name">${queueBadge?queueBadge+' ':''}<b>${escapeHtml(a.name)}</b></div>
+        <div class="appt-card-name">${queueBadge?queueBadge+' ':''}<b>${escapeHtml(a.name)}</b> ${visitTypeBadge(a.visitType)}</div>
         ${apptStatusBadge(a.status)}
       </div>
       <div class="appt-card-meta">
@@ -1556,6 +2042,12 @@ function apptStatusBadge(status){
   if(status==='ملغى') return '<span class="badge cancelled">ملغى</span>';
   return '<span class="badge scheduled">مجدول</span>';
 }
+function visitTypeBadge(type){
+  if(type==='exam') return '<span class="badge vtype-exam">فحص</span>';
+  if(type==='review') return '<span class="badge vtype-review">مراجعة</span>';
+  if(type==='nutrition') return '<span class="badge vtype-nutrition">تغذية</span>';
+  return '';
+}
 function updateStatusFieldForRole(){
   const sel = document.getElementById('aStatus');
   Array.from(sel.options).forEach(opt=>{
@@ -1563,6 +2055,18 @@ function updateStatusFieldForRole(){
   });
 }
 let editingAppt = null;
+let selectedVisitType = null;
+function selectVisitType(type){
+  selectedVisitType = type;
+  document.querySelectorAll('.visit-type-box').forEach(b=>b.classList.toggle('selected', b.dataset.type===type));
+}
+function updateDoctorFieldsVisibility(){
+  const wrap = document.getElementById('apptDoctorFields');
+  const divider = document.getElementById('aExtraDivider');
+  const show = currentRole==='doctor';
+  wrap.style.display = show ? 'contents' : 'none';
+  divider.style.display = show ? '' : 'none';
+}
 function openApptModal(){
   editingAppt = null;
   document.getElementById('apptModalTitle').textContent = 'New booking';
@@ -1571,8 +2075,10 @@ function openApptModal(){
   document.getElementById('aCategory').value = 'clinic';
   document.getElementById('aStatus').value = 'مجدول';
   updateStatusFieldForRole();
+  updateDoctorFieldsVisibility();
+  selectVisitType(null);
   document.getElementById('aDate').value = apptFilterMode==='date' ? apptFilterDate : todayStr();
-  document.getElementById('aTime').value = '';
+  document.getElementById('aTime').value = new Date().toTimeString().slice(0,5);
   document.getElementById('aExistingSearchWrap').classList.remove('hidden');
   document.getElementById('aExistingSuggest').classList.remove('show');
   document.getElementById('aExistingSuggest').innerHTML = '';
@@ -1630,6 +2136,8 @@ function editAppt(id){
   document.getElementById('aCategory').value = a.category||'clinic';
   document.getElementById('aStatus').value = a.status||'مجدول';
   updateStatusFieldForRole();
+  updateDoctorFieldsVisibility();
+  selectVisitType(a.visitType || null);
   document.getElementById('aDate').value = a.date||'';
   document.getElementById('aTime').value = a.time||'';
   openModal('apptModal');
@@ -1639,6 +2147,7 @@ async function saveAppointment(){
   const date = document.getElementById('aDate').value;
   const time = document.getElementById('aTime').value;
   if(!name || !date || !time){ showToast('Name, date and time are required'); return; }
+  if(!editingAppt && !selectedVisitType){ showToast('يرجى اختيار نوع الزيارة'); return; }
   const row = {
     patient_name: name,
     phone: document.getElementById('aPhone').value.trim(),
@@ -1647,41 +2156,75 @@ async function saveAppointment(){
     address: document.getElementById('aAddress').value.trim(),
     pmh: document.getElementById('aPmh').value.trim(),
     dh: document.getElementById('aDh').value.trim(),
-    category: document.getElementById('aCategory').value,
     appt_date: date,
     appt_time: time,
     status: document.getElementById('aStatus').value
   };
-  try{
-    if(editingAppt){
+  if(selectedVisitType) row.visit_type = selectedVisitType;
+  if(editingAppt){
+    row.category = document.getElementById('aCategory').value;
+    if(editingAppt.queueOrder==null && date===todayStr()){
+      row.queue_order = nextQueueOrder(date);
+    }
+  } else {
+    row.category = selectedVisitType==='nutrition' ? 'nutrition' : 'clinic';
+    if(date===todayStr()){
+      row.queue_order = nextQueueOrder(date);
+    }
+  }
+  let queued = false;
+  if(editingAppt){
+    try{
       const { error } = await sb.from('appointments').update(row).eq('id', editingAppt.id);
       if(error) throw error;
-    } else {
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('saveAppointment error:', err); showToast(err && err.message ? err.message : 'تعذر حفظ الموعد، حاول مجددًا'); return; }
+      enqueueOp({ kind:'appt_update', matchId:editingAppt.id, row:{...row} });
+      queued = true;
+    }
+    const idx = APPTS.findIndex(a=>a.id===editingAppt.id);
+    if(idx>-1){
+      const mapped = apptFromRow({ id:editingAppt.id, ...row });
+      // نحافظ على بيانات الكشف (تشخيص/علاج/نتائج) المحلية لأن هذا النموذج لا يعدّلها
+      APPTS[idx] = { ...APPTS[idx], ...mapped, diagnosis:APPTS[idx].diagnosis, labResults:APPTS[idx].labResults, treatment:APPTS[idx].treatment, notes:APPTS[idx].notes };
+    }
+  } else {
+    row.id = genId();
+    try{
       const { error } = await sb.from('appointments').insert(row);
       if(error) throw error;
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('saveAppointment error:', err); showToast(err && err.message ? err.message : 'تعذر حفظ الموعد، حاول مجددًا'); return; }
+      enqueueOp({ kind:'appt_insert', row:{...row} });
+      queued = true;
     }
-  }catch(err){
-    console.error('saveAppointment error:', err);
-    showToast(err && err.message ? err.message : 'تعذر حفظ الموعد، حاول مجددًا');
-    return;
+    APPTS.push(apptFromRow(row));
   }
+  cacheAppts();
   closeModal('apptModal');
-  showToast('تم حفظ الموعد');
+  showToast(queued ? '📴 لا يوجد اتصال — تم حفظ الموعد محليًا وسيُزامن لاحقًا' : 'تم حفظ الموعد');
   renderAppointmentsView();
 }
 async function deleteAppt(id){
   if(currentRole!=='doctor') return;
   if(!(await customConfirm('هل تريد حذف هذا الموعد؟'))) return;
-  try{
-    const { data, error } = await sb.from('appointments').delete().eq('id', id).select();
-    if(error) throw error;
-    if(!data || !data.length){ showToast('لم يتم الحذف — تحقق من الصلاحيات أو الاتصال'); return; }
-  }catch(err){
-    console.error('deleteAppt error:', err);
-    showToast('تعذر حذف الموعد');
-    return;
+  let queued = false;
+  if(hasQueuedInsert('appt_insert', id)){
+    purgeQueuedOpsForId(id);
+  } else {
+    try{
+      const { data, error } = await sb.from('appointments').delete().eq('id', id).select();
+      if(error) throw error;
+      if(!data || !data.length){ showToast('لم يتم الحذف — تحقق من الصلاحيات أو الاتصال'); return; }
+    }catch(err){
+      if(!isNetworkError(err)){ console.error('deleteAppt error:', err); showToast('تعذر حذف الموعد'); return; }
+      enqueueOp({ kind:'appt_delete', matchId:id });
+      queued = true;
+    }
   }
-  showToast('تم حذف الموعد');
+  APPTS = APPTS.filter(a=>a.id!==id);
+  cacheAppts();
+  showToast(queued ? '📴 لا يوجد اتصال — سيُحذف الموعد من الخادم عند عودة الإنترنت' : 'تم حذف الموعد');
   renderAppointmentsView();
 }
 
@@ -1694,15 +2237,63 @@ function openExamModal(id){
   if(!a) return;
   examCtx = { apptId:id };
   document.getElementById('examPatientName').textContent = a.name;
+  document.getElementById('examName').value = a.name||'';
+  document.getElementById('examExistingSearch').value = '';
+  document.getElementById('examExistingSuggest').classList.remove('show');
+  document.getElementById('examExistingSuggest').innerHTML = '';
+  document.getElementById('examPhone').value = a.phone||'';
+  document.getElementById('examAge').value = a.age||'';
+  document.getElementById('examSex').value = a.sex||'';
+  document.getElementById('examAddress').value = a.address||'';
+  document.getElementById('examPmh').value = a.pmh||'';
+  document.getElementById('examDh').value = a.dh||'';
+  document.getElementById('examCategory').value = a.category||'clinic';
   document.getElementById('examDiagnosis').value = a.diagnosis||'';
   setLabRef('examLabRef');
   document.getElementById('examLabResults').value = a.labResults || '';
   document.getElementById('examTreatment').value = a.treatment||'';
+  document.getElementById('examNotes').value = a.notes||'';
   document.getElementById('examMedSearch').value = '';
   document.getElementById('examMedSuggest').classList.remove('show');
   document.getElementById('examDoseResult').innerHTML = '';
   document.getElementById('examInsertDoseBtn').style.display = 'none';
   openModal('examModal');
+}
+function renderExamExistingPatientSuggest(){
+  const q = (document.getElementById('examExistingSearch').value||'').trim().toLowerCase();
+  const box = document.getElementById('examExistingSuggest');
+  if(!q){ box.classList.remove('show'); box.innerHTML=''; return; }
+  let matches = [];
+  ['clinic','surgery','nutrition'].forEach(cat=>{
+    DB[cat].forEach(p=>{
+      if(p.name.toLowerCase().includes(q) || (p.phone||'').includes(q)) matches.push({cat, p});
+    });
+  });
+  matches = matches.slice(0,8);
+  if(!matches.length){
+    box.innerHTML = `<div class="med-suggest-item" style="color:var(--text-muted);">لا يوجد مريض مطابق.</div>`;
+    box.classList.add('show');
+    return;
+  }
+  box.innerHTML = matches.map(({cat,p})=>`
+    <div class="med-suggest-item" onclick='selectExamExistingPatient(${JSON.stringify(cat)},${JSON.stringify(p.id)})'>
+      ${escapeHtml(p.name)} <small>${escapeHtml(p.phone||'')} — ${escapeHtml(CATEGORY_LABELS[cat])}</small>
+    </div>`).join('');
+  box.classList.add('show');
+}
+function selectExamExistingPatient(cat, id){
+  const p = DB[cat].find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('examName').value = p.name||'';
+  document.getElementById('examPhone').value = p.phone||'';
+  document.getElementById('examAge').value = p.age||'';
+  document.getElementById('examSex').value = p.sex||'';
+  document.getElementById('examAddress').value = p.address||'';
+  document.getElementById('examPmh').value = p.pmh||'';
+  document.getElementById('examDh').value = p.dh||'';
+  document.getElementById('examCategory').value = cat;
+  document.getElementById('examExistingSuggest').classList.remove('show');
+  showToast('تم تعبئة بيانات المريض تلقائيًا');
 }
 function renderExamMedSuggest(){
   const q = (document.getElementById('examMedSearch').value||'').trim().toLowerCase();
@@ -1750,7 +2341,7 @@ async function findOrCreatePatientFromAppt(a){
   if(!patient) patient = list.find(p=>p.name.trim().toLowerCase()===a.name.trim().toLowerCase());
   if(!patient){
     const row = {
-      name: a.name, phone: a.phone||'', age: a.age||'',
+      id: genId(), name: a.name, phone: a.phone||'', age: a.age||'',
       sex: a.sex||'', address: a.address||'', pmh: a.pmh||'', dh: a.dh||'',
       visits: []
     };
@@ -1758,38 +2349,59 @@ async function findOrCreatePatientFromAppt(a){
       const { data, error } = await sb.from(patientsTable(cat)).insert(row).select().single();
       if(error) throw error;
       patient = patientFromRow(data);
-      list.push(patient);
     }catch(err){
-      console.error('findOrCreatePatientFromAppt error:', err);
-      showToast('تعذر إنشاء سجل المريض');
-      return null;
+      if(!isNetworkError(err)){ console.error('findOrCreatePatientFromAppt error:', err); showToast('تعذر إنشاء سجل المريض'); return null; }
+      enqueueOp({ kind:'patient_insert', category:cat, row:{...row} });
+      patient = patientFromRow({ ...row, created_at: new Date().toISOString() });
     }
+    list.push(patient);
+    cacheDB();
   }
   return { cat, patient };
 }
 async function saveExam(){
   const a = APPTS.find(x=>x.id===examCtx.apptId);
   if(!a) return;
+  const name = document.getElementById('examName').value.trim();
+  if(!name){ showToast('يرجى إدخال اسم المريض'); return; }
+  const phone = document.getElementById('examPhone').value.trim();
+  const age = document.getElementById('examAge').value.trim();
+  const sex = document.getElementById('examSex').value;
+  const address = document.getElementById('examAddress').value.trim();
+  const pmh = document.getElementById('examPmh').value.trim();
+  const dh = document.getElementById('examDh').value.trim();
+  const category = document.getElementById('examCategory').value;
   const diagnosis = document.getElementById('examDiagnosis').value.trim();
   const labResults = document.getElementById('examLabResults').value.trim();
   const treatment = document.getElementById('examTreatment').value.trim();
-  const row = { diagnosis, lab_results: labResults, treatment, status:'مكتمل' };
+  const notes = document.getElementById('examNotes').value.trim();
+  const row = {
+    patient_name: name,
+    phone, age, sex, address, pmh, dh, category,
+    diagnosis, lab_results: labResults, treatment, notes, status:'مكتمل'
+  };
+  let queued = false;
   try{
     const { error } = await sb.from('appointments').update(row).eq('id', examCtx.apptId);
     if(error) throw error;
   }catch(err){
-    console.error('saveExam appointments update error:', err);
-    showToast('تعذر حفظ الكشف، حاول مجددًا');
-    return;
+    if(!isNetworkError(err)){ console.error('saveExam appointments update error:', err); showToast('تعذر حفظ الكشف، حاول مجددًا'); return; }
+    enqueueOp({ kind:'appt_update', matchId:examCtx.apptId, row:{...row} });
+    queued = true;
   }
-  // ربط الكشف بسجل المريض ضمن إحدى القوائم الثلاث
-  const result = await findOrCreatePatientFromAppt({...a, diagnosis});
+  const idx = APPTS.findIndex(x=>x.id===examCtx.apptId);
+  if(idx>-1) APPTS[idx] = { ...APPTS[idx], name, phone, age, sex, address, pmh, dh, category, diagnosis, labResults, treatment, notes, status:'مكتمل' };
+  cacheAppts();
+
+  // ربط الكشف بسجل المريض ضمن إحدى القوائم الثلاث، بالبيانات المحدَّثة
+  const updatedAppt = { ...a, name, phone, age, sex, address, pmh, dh, category, diagnosis };
+  const result = await findOrCreatePatientFromAppt(updatedAppt);
   if(result){
     const { cat, patient } = result;
     patient.visits = patient.visits || [];
-    patient.visits.push({ id: uid(), date: a.date || todayStr(), diagnosis, labResults, treatment });
+    patient.visits.push({ id: uid(), date: a.date || todayStr(), diagnosis, labResults, treatment, notes });
     await persistPatientVisits(cat, patient);
-    showToast('تم حفظ الكشف وإضافته إلى ' + CATEGORY_LABELS[cat]);
+    showToast(queued ? '📴 لا يوجد اتصال — تم حفظ الكشف محليًا وسيُزامن لاحقًا' : ('تم حفظ الكشف وإضافته إلى ' + CATEGORY_LABELS[cat]));
   } else {
     showToast('تم حفظ الكشف، لكن تعذّر ربطه بسجل المريض');
   }
@@ -1849,6 +2461,7 @@ function printApptRx(apptId){
       <div class="rx-symbol">RX/</div>
       ${lines.length ? '<ul class="rx-list">'+lines.map(l=>`<li>${escapeHtml(l)}</li>`).join('')+'</ul>' : '<div class="rx-empty">No treatment recorded for this visit</div>'}
     </div>
+    ${a.notes ? `<div class="rx-lab"><b>Notes:</b> ${escapeHtml(a.notes)}</div>` : ''}
     <div class="rx-sign"><div class="line"></div>توقيع وختم الطبيب</div>
     <div class="rx-footer">طُبعت بتاريخ ${printedAt}</div>
   </div>
@@ -1900,16 +2513,24 @@ document.addEventListener('click', function(e){
    INIT
 ========================================================= */
 (async function init(){
+  loadOfflineQueue();
   document.getElementById('supabaseNotice').classList.toggle('hidden', supabaseConfigured);
   await restoreSession();
   renderNav();
   if(isAuthed){
     await loadDB();
     showView('appointments');
+    if(offlineQueue.length) processQueue(false);
   } else {
     showView('home');
   }
 })();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
 </script>
 </body>
 </html>
