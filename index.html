@@ -1569,14 +1569,15 @@ function printVisit(type, patientId, visitId){
   <title>Prescription - ${escapeHtml(p.name)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
-    *{box-sizing:border-box;}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;}
-    .rx-page{max-width:720px;margin:0 auto;padding:34px 40px;position:relative;}
-    .rx-header{text-align:center;border-bottom:2px solid #1D5FC9;padding-bottom:16px;margin-bottom:26px;}
-    .rx-seal{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;background:linear-gradient(145deg,#2FB7E6,#1D5FC9);
-      display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:20px;}
-    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:24px;color:#0E3B85;}
-    .rx-doctor-role{font-size:13px;color:#5A6C85;margin-top:2px;}
+    .rx-page{max-width:720px;margin:0 auto;padding:0 40px 34px;position:relative;}
+    .rx-top-band{background:linear-gradient(135deg,#2FB7E6,#1D5FC9);color:#fff;text-align:center;
+      padding:26px 20px 30px;border-radius:0 0 46px 46px;margin:0 0 26px;}
+    .rx-seal{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;background:rgba(255,255,255,.18);
+      display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:20px;border:1.5px solid rgba(255,255,255,.5);}
+    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:24px;color:#fff;}
+    .rx-doctor-role{font-size:13px;color:rgba(255,255,255,.9);margin-top:2px;}
     .rx-patient-line{display:flex;align-items:baseline;gap:14px;border-bottom:1.5px dotted #B9C7DC;padding-bottom:12px;margin-bottom:16px;font-size:15px;}
     .rx-patient-line b{color:#0E3B85;flex-shrink:0;}
     .rx-patient-line .val{flex:1;font-weight:700;}
@@ -1589,12 +1590,13 @@ function printVisit(type, patientId, visitId){
     .rx-empty{color:#9AA8BC;font-size:13.5px;}
     .rx-sign{margin-top:34px;text-align:left;font-size:12px;color:#5A6C85;}
     .rx-sign .line{width:170px;border-bottom:1.5px solid #132338;margin:0 0 6px auto;height:36px;}
-    .rx-footer{margin-top:26px;border-top:1px solid #DCE6F4;padding-top:10px;font-size:10px;color:#9AA8BC;text-align:left;}
-    @media print{ @page{size:auto;margin:0;} body{padding:0;} .rx-page{padding:22px 30px 0;} }
+    .rx-bottom-band{background:linear-gradient(135deg,#1D5FC9,#2FB7E6);color:#fff;text-align:center;
+      padding:12px 20px;border-radius:26px 26px 0 0;margin:30px -40px -34px;font-size:11px;letter-spacing:.3px;}
+    @media print{ @page{size:auto;margin:0;} body{padding:0;} .rx-page{padding:0 30px 22px;} }
   </style></head>
   <body onload="setTimeout(function(){window.print();},250)">
   <div class="rx-page">
-    <div class="rx-header">
+    <div class="rx-top-band">
       <div class="rx-seal">OB</div>
       <div class="rx-doctor-name">د. عثمان بهاء</div>
       <div class="rx-doctor-role">الطبيب المعالج</div>
@@ -1611,7 +1613,7 @@ function printVisit(type, patientId, visitId){
       </div>
     </div>
     <div class="rx-sign"><div class="line"></div>توقيع وختم الطبيب</div>
-    <div class="rx-footer">طُبعت بتاريخ ${printedAt}</div>
+    <div class="rx-bottom-band">طُبعت بتاريخ ${printedAt}</div>
   </div>
   </body></html>`;
   const win = window.open('', '_blank');
@@ -2412,14 +2414,15 @@ function printApptRx(apptId){
   <title>Prescription - ${escapeHtml(a.name)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
-    *{box-sizing:border-box;}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;}
-    .rx-page{max-width:720px;margin:0 auto;padding:34px 40px;position:relative;}
-    .rx-header{text-align:center;border-bottom:2px solid #1D5FC9;padding-bottom:16px;margin-bottom:26px;}
-    .rx-seal{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;background:linear-gradient(145deg,#2FB7E6,#1D5FC9);
-      display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:20px;}
-    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:24px;color:#0E3B85;}
-    .rx-doctor-role{font-size:13px;color:#5A6C85;margin-top:2px;}
+    .rx-page{max-width:720px;margin:0 auto;padding:0 40px 34px;position:relative;}
+    .rx-top-band{background:linear-gradient(135deg,#2FB7E6,#1D5FC9);color:#fff;text-align:center;
+      padding:26px 20px 30px;border-radius:0 0 46px 46px;margin:0 0 26px;}
+    .rx-seal{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;background:rgba(255,255,255,.18);
+      display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:20px;border:1.5px solid rgba(255,255,255,.5);}
+    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:24px;color:#fff;}
+    .rx-doctor-role{font-size:13px;color:rgba(255,255,255,.9);margin-top:2px;}
     .rx-patient-line{display:flex;align-items:baseline;gap:14px;border-bottom:1.5px dotted #B9C7DC;padding-bottom:12px;margin-bottom:16px;font-size:15px;}
     .rx-patient-line b{color:#0E3B85;flex-shrink:0;}
     .rx-patient-line .val{flex:1;font-weight:700;}
@@ -2432,12 +2435,13 @@ function printApptRx(apptId){
     .rx-empty{color:#9AA8BC;font-size:13.5px;}
     .rx-sign{margin-top:34px;text-align:left;font-size:12px;color:#5A6C85;}
     .rx-sign .line{width:170px;border-bottom:1.5px solid #132338;margin:0 0 6px auto;height:36px;}
-    .rx-footer{margin-top:26px;border-top:1px solid #DCE6F4;padding-top:10px;font-size:10px;color:#9AA8BC;text-align:left;}
-    @media print{ @page{size:auto;margin:0;} body{padding:0;} .rx-page{padding:22px 30px 0;} }
+    .rx-bottom-band{background:linear-gradient(135deg,#1D5FC9,#2FB7E6);color:#fff;text-align:center;
+      padding:12px 20px;border-radius:26px 26px 0 0;margin:30px -40px -34px;font-size:11px;letter-spacing:.3px;}
+    @media print{ @page{size:auto;margin:0;} body{padding:0;} .rx-page{padding:0 30px 22px;} }
   </style></head>
   <body onload="setTimeout(function(){window.print();},250)">
   <div class="rx-page">
-    <div class="rx-header">
+    <div class="rx-top-band">
       <div class="rx-seal">OB</div>
       <div class="rx-doctor-name">د. عثمان بهاء</div>
       <div class="rx-doctor-role">الطبيب المعالج</div>
@@ -2454,7 +2458,7 @@ function printApptRx(apptId){
       </div>
     </div>
     <div class="rx-sign"><div class="line"></div>توقيع وختم الطبيب</div>
-    <div class="rx-footer">طُبعت بتاريخ ${printedAt}</div>
+    <div class="rx-bottom-band">طُبعت بتاريخ ${printedAt}</div>
   </div>
   </body></html>`;
   const win = window.open('', '_blank');
