@@ -75,6 +75,20 @@ footer.site-footer{padding:24px 0;text-align:center;color:var(--text-muted);font
 .field input,.field select,.field textarea{padding:11px 13px;border-radius:10px;border:1.6px solid var(--line);background:#fff;font-size:14.5px;color:var(--text);outline:none;transition:.15s;width:100%;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary);}
 .field textarea{resize:vertical;min-height:70px;}
+.field-ltr{direction:ltr;text-align:left;}
+.lab-highlight-wrap{position:relative;}
+.lab-highlight-backdrop{position:absolute;inset:0;margin:0;padding:11px 13px;font-family:inherit;font-size:14.5px;line-height:1.5;
+  white-space:pre-wrap;word-wrap:break-word;overflow:hidden;pointer-events:none;direction:ltr;text-align:left;
+  border:1.6px solid transparent;box-sizing:border-box;color:#111;}
+.lab-highlight-backdrop b{color:#4C8DF5;font-weight:600;}
+.lab-highlight-input{position:relative;background:transparent!important;color:transparent!important;caret-color:#111;line-height:1.5;z-index:1;}
+.lab-highlight-input::placeholder{color:#9AA8BC;-webkit-text-fill-color:#9AA8BC;}
+.lab-result-list{display:inline-flex;flex-wrap:wrap;gap:6px 10px;vertical-align:top;}
+.lab-result-chip{background:var(--surface-2);border-radius:8px;padding:3px 9px;font-size:13px;color:#132338;white-space:nowrap;}
+.lab-result-chip b{color:#1D5FC9;}
+.treatment-list{margin:2px 0 8px;padding-right:0;padding-left:20px;font-size:13px;color:var(--text);line-height:1.7;direction:ltr;text-align:left;}
+.treatment-list li{margin-bottom:4px;}
+.treatment-list li b{color:#1D5FC9;}
 .err-msg{background:var(--danger-bg);color:var(--danger);font-size:13px;font-weight:700;padding:9px 12px;border-radius:10px;margin-bottom:12px;display:none;}
 .err-msg.show{display:block;}
 .btn{padding:12px 22px;border-radius:12px;font-weight:700;font-size:14.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.2s;}
@@ -464,8 +478,8 @@ tr:last-child td{border-bottom:none;}
           <select id="aSex"><option value="">—</option><option value="Male">Male</option><option value="Female">Female</option></select>
         </div>
         <div class="field full"><label>Address</label><input id="aAddress" type="text" placeholder="Optional"></div>
-        <div class="field full"><label>PMH (Past Medical History)</label><textarea id="aPmh" placeholder="Optional"></textarea></div>
-        <div class="field full"><label>DH (Drug History)</label><textarea id="aDh" placeholder="Optional"></textarea></div>
+        <div class="field full"><label>PMH (Past Medical History)</label><textarea id="aPmh" class="field-ltr" placeholder="Optional"></textarea></div>
+        <div class="field full"><label>DH (Drug History)</label><textarea id="aDh" class="field-ltr" placeholder="Optional"></textarea></div>
         <div class="field full"><label>التصنيف *</label>
           <select id="aCategory">
             <option value="clinic">مرضى العيادة</option>
@@ -508,8 +522,8 @@ tr:last-child td{border-bottom:none;}
         <select id="examSex"><option value="">—</option><option value="Male">Male</option><option value="Female">Female</option></select>
       </div>
       <div class="field full"><label>Address</label><input id="examAddress" type="text" placeholder="Optional"></div>
-      <div class="field full"><label>PMH (Past Medical History)</label><textarea id="examPmh" placeholder="Optional"></textarea></div>
-      <div class="field full"><label>DH (Drug History)</label><textarea id="examDh" placeholder="Optional"></textarea></div>
+      <div class="field full"><label>PMH (Past Medical History)</label><textarea id="examPmh" class="field-ltr" placeholder="Optional"></textarea></div>
+      <div class="field full"><label>DH (Drug History)</label><textarea id="examDh" class="field-ltr" placeholder="Optional"></textarea></div>
       <div class="field full"><label>التصنيف</label>
         <select id="examCategory">
           <option value="clinic">مرضى العيادة</option>
@@ -521,10 +535,13 @@ tr:last-child td{border-bottom:none;}
 
     <div class="section-title" style="margin-top:18px;">الكشف والعلاج</div>
     <div class="form-grid">
-      <div class="field full"><label>Diagnosis</label><input id="examDiagnosis" type="text" placeholder="Diagnosis"></div>
+      <div class="field full"><label>Diagnosis</label><input id="examDiagnosis" type="text" class="field-ltr" placeholder="Diagnosis"></div>
       <div class="field full">
         <label>Lab results</label>
-        <textarea id="examLabResults" rows="16" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+        <div class="lab-highlight-wrap">
+          <div class="lab-highlight-backdrop" id="examLabResultsBackdrop"></div>
+          <textarea id="examLabResults" rows="16" class="field-ltr lab-highlight-input" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+        </div>
       </div>
     </div>
 
@@ -541,9 +558,9 @@ tr:last-child td{border-bottom:none;}
       <button type="button" class="btn btn-outline btn-sm" style="display:none;margin-top:8px;" id="examInsertDoseBtn" onclick="insertExamDose()">➕ إدراج الجرعة بالوصفة</button>
     </div>
 
-    <div class="field full"><label>Treatment</label><textarea id="examTreatment" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
+    <div class="field full"><label>Treatment</label><textarea id="examTreatment" class="field-ltr" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
 
-    <div class="field full"><label>Notes</label><textarea id="examNotes" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
+    <div class="field full"><label>Notes</label><textarea id="examNotes" class="field-ltr" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
 
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('examModal')">إلغاء</button>
@@ -572,16 +589,19 @@ tr:last-child td{border-bottom:none;}
       <div class="field"><label>Age</label><input id="pAge" type="text" placeholder="e.g. 34"></div>
       <div class="field"><label>Sex</label><select id="pSex"><option value="">—</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
       <div class="field full"><label>Address</label><input id="pAddress" type="text" placeholder="Optional"></div>
-      <div class="field full"><label>PMH (Past Medical History)</label><textarea id="pPmh" placeholder="Optional"></textarea></div>
-      <div class="field full"><label>DH (Drug History)</label><textarea id="pDh" placeholder="Optional"></textarea></div>
+      <div class="field full"><label>PMH (Past Medical History)</label><textarea id="pPmh" class="field-ltr" placeholder="Optional"></textarea></div>
+      <div class="field full"><label>DH (Drug History)</label><textarea id="pDh" class="field-ltr" placeholder="Optional"></textarea></div>
     </div>
 
     <div class="section-title" style="margin-top:18px;">الكشف والعلاج (اختياري)</div>
     <div class="form-grid">
-      <div class="field full"><label>Diagnosis</label><input id="pDiagnosis" type="text" placeholder="Diagnosis"></div>
+      <div class="field full"><label>Diagnosis</label><input id="pDiagnosis" type="text" class="field-ltr" placeholder="Diagnosis"></div>
       <div class="field full">
         <label>Lab results</label>
-        <textarea id="pLabResults" rows="16" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+        <div class="lab-highlight-wrap">
+          <div class="lab-highlight-backdrop" id="pLabResultsBackdrop"></div>
+          <textarea id="pLabResults" rows="16" class="field-ltr lab-highlight-input" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+        </div>
       </div>
     </div>
     <div class="dose-calc">
@@ -596,8 +616,8 @@ tr:last-child td{border-bottom:none;}
       <div id="pDoseResult"></div>
       <button type="button" class="btn btn-outline btn-sm" style="display:none;margin-top:8px;" id="pInsertDoseBtn" onclick="insertPatientModalDose()">➕ إدراج الجرعة بالوصفة</button>
     </div>
-    <div class="field full"><label>Treatment</label><textarea id="pTreatment" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
-    <div class="field full"><label>Notes</label><textarea id="pNotes" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
+    <div class="field full"><label>Treatment</label><textarea id="pTreatment" class="field-ltr" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
+    <div class="field full"><label>Notes</label><textarea id="pNotes" class="field-ltr" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
 
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('patientModal')">إلغاء</button>
@@ -865,6 +885,74 @@ function todayStr(){
 }
 function escapeHtml(str){
   return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function initLabHighlighter(id){
+  const ta = document.getElementById(id);
+  const bg = document.getElementById(id+'Backdrop');
+  if(!ta || !bg || ta._labHighlightInit) return;
+  ta._labHighlightInit = true;
+  function render(){
+    const lines = ta.value.split('\n');
+    bg.innerHTML = lines.map(line=>{
+      const idx = line.indexOf(':');
+      if(idx>-1){
+        return '<b>'+escapeHtml(line.slice(0,idx+1))+'</b>'+escapeHtml(line.slice(idx+1));
+      }
+      return escapeHtml(line);
+    }).join('\n') + '\n';
+    bg.scrollTop = ta.scrollTop;
+    bg.scrollLeft = ta.scrollLeft;
+  }
+  ta.addEventListener('input', render);
+  ta.addEventListener('scroll', ()=>{ bg.scrollTop = ta.scrollTop; bg.scrollLeft = ta.scrollLeft; });
+  ta._renderLabHighlight = render;
+  render();
+}
+function refreshLabHighlight(id){
+  const ta = document.getElementById(id);
+  if(ta && ta._renderLabHighlight) ta._renderLabHighlight();
+}
+function renderRxTreatmentTable(lines){
+  if(!lines || !lines.length) return '<div class="rx-empty">No treatment recorded for this visit</div>';
+  const rows = lines.map((line,i)=>{
+    const idx = line.indexOf(':');
+    let name, repeat;
+    if(idx>-1){ name = line.slice(0,idx).trim(); repeat = line.slice(idx+1).trim(); }
+    else { name = line.trim(); repeat = ''; }
+    return `<tr><td class="rx-table-num">${i+1}</td><td>${escapeHtml(name)}</td><td>${escapeHtml(repeat)}</td></tr>`;
+  }).join('');
+  return `<table class="rx-table"><thead><tr><th class="rx-table-num">#</th><th>Drug name</th><th>Repeat time</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function formatTreatmentDisplay(text){
+  if(!text) return '';
+  const lines = String(text).split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) return '';
+  const items = lines.map(line=>{
+    const idx = line.indexOf(':');
+    if(idx>-1){
+      const name = line.slice(0,idx).trim();
+      const rest = line.slice(idx+1).trim();
+      return `<li><b>${escapeHtml(name)}</b>${rest ? ': '+escapeHtml(rest) : ''}</li>`;
+    }
+    return `<li>${escapeHtml(line)}</li>`;
+  }).join('');
+  return `<ol class="treatment-list">${items}</ol>`;
+}
+function formatLabResultsDisplay(text){
+  if(!text) return '';
+  const lines = String(text).split('\n');
+  const items = [];
+  lines.forEach(line=>{
+    const idx = line.indexOf(':');
+    if(idx>-1){
+      const label = line.slice(0,idx).trim();
+      const val = line.slice(idx+1).trim();
+      if(val) items.push(`<span class="lab-result-chip"><b>${escapeHtml(label)}:</b> ${escapeHtml(val)}</span>`);
+    } else if(line.trim()){
+      items.push(`<span class="lab-result-chip">${escapeHtml(line.trim())}</span>`);
+    }
+  });
+  return items.join('');
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -1176,6 +1264,7 @@ function openPatientModal(){
   document.getElementById('pExistingSuggest').classList.remove('show');
   document.getElementById('pExistingSuggest').innerHTML = '';
   document.getElementById('pLabResults').value = LAB_TEMPLATE_TEXT;
+  refreshLabHighlight('pLabResults');
   document.getElementById('pMedSuggest').classList.remove('show');
   document.getElementById('pDoseResult').innerHTML = '';
   document.getElementById('pInsertDoseBtn').style.display = 'none';
@@ -1345,10 +1434,13 @@ function renderPatientDetail(){
     <div class="panel" style="padding:16px;">
       <div class="form-grid">
         <div class="field"><label>Date</label><input type="date" id="visitDate" value="${todayStr()}"></div>
-        <div class="field full"><label>Diagnosis</label><input type="text" id="visitDiagnosis" placeholder="Diagnosis"></div>
+        <div class="field full"><label>Diagnosis</label><input type="text" id="visitDiagnosis" class="field-ltr" placeholder="Diagnosis"></div>
         <div class="field full">
           <label>Lab results</label>
-          <textarea id="visitLabResults" rows="16" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+          <div class="lab-highlight-wrap">
+            <div class="lab-highlight-backdrop" id="visitLabResultsBackdrop"></div>
+            <textarea id="visitLabResults" rows="16" class="field-ltr lab-highlight-input" placeholder="اكتب نتائج التحاليل هنا، مثال: Vit D3: Low"></textarea>
+          </div>
         </div>
       </div>
 
@@ -1365,9 +1457,9 @@ function renderPatientDetail(){
         <button type="button" class="btn btn-outline btn-sm" style="display:none;margin-top:8px;" id="visitInsertDoseBtn" onclick="insertVisitDose()">➕ إدراج الجرعة بالوصفة</button>
       </div>
 
-      <div class="field full"><label>Treatment</label><textarea id="visitTreatment" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
+      <div class="field full"><label>Treatment</label><textarea id="visitTreatment" class="field-ltr" placeholder="الأدوية والجرعات والتوصيات"></textarea></div>
 
-      <div class="field full"><label>Notes</label><textarea id="visitNotes" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
+      <div class="field full"><label>Notes</label><textarea id="visitNotes" class="field-ltr" placeholder="ملاحظات إضافية (اختياري)"></textarea></div>
 
       <div class="modal-actions">
         ${detailCtx.editingVisitId ? `<button class="btn btn-outline" onclick="cancelEditVisit()">إلغاء التعديل</button>` : ''}
@@ -1387,19 +1479,22 @@ function renderPatientDetail(){
           </div>
         </div>
         <div class="vdiag"><b>Diagnosis:</b> ${escapeHtml(v.diagnosis||'—')}</div>
-        ${v.labResults ? `<div class="vdiag"><b>Lab results:</b> ${escapeHtml(v.labResults)}</div>` : ''}
-        <div class="vdiag"><b>Treatment:</b> ${v.treatment ? escapeHtml(v.treatment) : '<span class="hint">لا يوجد</span>'}</div>
+        ${(()=>{ const lr = formatLabResultsDisplay(v.labResults); return lr ? `<div class="vdiag"><b>Lab results:</b> <span class="lab-result-list">${lr}</span></div>` : ''; })()}
+        <div class="vdiag"><b>Treatment:</b> ${v.treatment ? '' : '<span class="hint">لا يوجد</span>'}</div>
+        ${v.treatment ? formatTreatmentDisplay(v.treatment) : ''}
         ${v.notes ? `<div class="vdiag"><b>Notes:</b> ${escapeHtml(v.notes)}</div>` : ''}
       </div>
     `).join('') : emptyState('🕘','لا توجد زيارات سابقة لهذا المريض')}
   `;
   if(isDoctor){
+    initLabHighlighter('visitLabResults');
     document.getElementById('visitMedSearch').value = '';
     document.getElementById('visitMedSuggest').classList.remove('show');
     document.getElementById('visitDoseResult').innerHTML = '';
     document.getElementById('visitInsertDoseBtn').style.display = 'none';
     if(!detailCtx.editingVisitId){
       document.getElementById('visitLabResults').value = LAB_TEMPLATE_TEXT;
+      refreshLabHighlight('visitLabResults');
       document.getElementById('visitTreatment').value = '';
       document.getElementById('visitNotes').value = '';
     }
@@ -1452,6 +1547,7 @@ function editVisit(visitId){
   document.getElementById('visitDate').value = v.date || todayStr();
   document.getElementById('visitDiagnosis').value = v.diagnosis || '';
   document.getElementById('visitLabResults').value = v.labResults || '';
+  refreshLabHighlight('visitLabResults');
   document.getElementById('visitTreatment').value = v.treatment || '';
   document.getElementById('visitNotes').value = v.notes || '';
 }
@@ -1518,6 +1614,7 @@ function editPatientFromDetail(){
   document.getElementById('pDh').value = p.dh || p.allergy || '';
   ['pDiagnosis','pTreatment','pNotes','pMedSearch'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('pLabResults').value = LAB_TEMPLATE_TEXT;
+  refreshLabHighlight('pLabResults');
   document.getElementById('pMedSuggest').classList.remove('show');
   document.getElementById('pDoseResult').innerHTML = '';
   document.getElementById('pInsertDoseBtn').style.display = 'none';
@@ -1570,50 +1667,68 @@ function printVisit(type, patientId, visitId){
   <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;}
-    .rx-page{max-width:720px;margin:0 auto;padding:0 40px 34px;position:relative;}
-    .rx-top-band{background:linear-gradient(135deg,#2FB7E6,#1D5FC9);color:#fff;text-align:center;
-      padding:26px 20px 30px;border-radius:0 0 46px 46px;margin:0 0 26px;}
-    .rx-seal{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;background:rgba(255,255,255,.18);
-      display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:20px;border:1.5px solid rgba(255,255,255,.5);}
-    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:24px;color:#fff;}
-    .rx-doctor-role{font-size:13px;color:rgba(255,255,255,.9);margin-top:2px;}
-    .rx-patient-line{display:flex;align-items:baseline;gap:14px;border-bottom:1.5px dotted #B9C7DC;padding-bottom:12px;margin-bottom:16px;font-size:15px;}
-    .rx-patient-line b{color:#0E3B85;flex-shrink:0;}
-    .rx-patient-line .val{flex:1;font-weight:700;}
-    .rx-meta-line{display:flex;gap:46px;margin-bottom:26px;font-size:14.5px;}
-    .rx-meta-line b{color:#0E3B85;}
-    .rx-box{border:2px solid #1D5FC9;border-radius:16px;padding:22px 24px;min-height:300px;}
-    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:28px;font-weight:800;color:#1D5FC9;margin-bottom:18px;direction:ltr;text-align:left;}
-    .rx-box-body{direction:ltr;text-align:left;font-size:15.5px;line-height:2.5;}
-    .rx-box-body div{margin-bottom:6px;}
+    body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;background:#fff;}
+    .rx-page{max-width:720px;margin:0 auto;padding:22px 26px 18px;position:relative;}
+    .rx-header{position:relative;min-height:110px;padding-top:4px;}
+    .rx-logo-wrap{position:absolute;top:0;left:0;width:100px;height:100px;border-radius:50%;border:2px dashed #cfd8e2;display:flex;align-items:center;justify-content:center;}
+    .rx-logo-circle{width:82px;height:82px;border-radius:50%;background:linear-gradient(145deg,#3b7bab,#2a5b82);display:flex;align-items:center;justify-content:center;font-size:34px;color:#fff;}
+    .rx-gold-accent{position:absolute;top:16px;left:auto;right:-26px;width:230px;height:44px;
+      background:linear-gradient(100deg,#9099a3 0%,#9099a3 22%,#f6b73e 40%,#f6b73e 100%);
+      clip-path:polygon(18% 0,100% 0,82% 100%,0% 100%);}
+    .rx-header-text{text-align:center;}
+    .rx-doctor-title{font-size:16px;font-weight:800;color:#1B3B66;}
+    .rx-doctor-name{font-family:'Tajawal',sans-serif;font-weight:800;font-size:23px;color:#D0161C;margin-top:2px;}
+    .rx-doctor-specialty{font-size:15px;color:#1B3B66;font-weight:800;margin-top:4px;}
+    .rx-divider-banner{position:relative;height:26px;background:#1B3B66;overflow:hidden;margin:16px 0 22px;}
+    .rx-divider-banner::after{content:'';position:absolute;top:-6px;left:-6%;width:112%;height:12px;background:#fff;transform:rotate(-2.2deg);}
+    .rx-patient-line{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:14px;font-size:15.5px;}
+    .rx-patient-line b{color:#132338;font-weight:800;}
+    .rx-patient-line .val{font-weight:700;}
+    .rx-divider-thin{height:6px;background:#1B3B66;margin-bottom:22px;}
+    .rx-box{border:2px dashed #333;border-radius:18px;padding:22px 24px;min-height:520px;}
+    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:26px;font-weight:800;color:#1B3B66;margin-bottom:18px;direction:ltr;text-align:left;}
+    .rx-box-body{direction:ltr;text-align:left;font-size:15.5px;line-height:1.8;}
+    .rx-table{width:100%;border-collapse:collapse;font-size:14px;}
+    .rx-table th{background:#eef2f7;color:#1B3B66;font-weight:800;padding:9px 12px;border:1px solid #c9d3de;text-align:left;}
+    .rx-table td{padding:9px 12px;border:1px solid #c9d3de;vertical-align:top;text-align:left;}
+    .rx-table td:last-child,.rx-table th:last-child{text-align:right;}
+    .rx-table-num{width:32px;text-align:center!important;color:#5A6C85;font-weight:700;}
     .rx-empty{color:#9AA8BC;font-size:13.5px;}
-    .rx-sign{margin-top:34px;text-align:left;font-size:12px;color:#5A6C85;}
+    .rx-sign{margin-top:16px;text-align:left;font-size:12px;color:#5A6C85;}
     .rx-sign .line{width:170px;border-bottom:1.5px solid #132338;margin:0 0 6px auto;height:36px;}
-    .rx-bottom-band{background:linear-gradient(135deg,#1D5FC9,#2FB7E6);color:#fff;text-align:center;
-      padding:12px 20px;border-radius:26px 26px 0 0;margin:30px -40px -34px;font-size:11px;letter-spacing:.3px;}
-    @media print{ @page{size:auto;margin:0;} body{padding:0;} .rx-page{padding:0 30px 22px;} }
+    .rx-footer-band{height:6px;background:#1B3B66;margin:18px 0 10px;}
+    .rx-footer-text{text-align:center;color:#D0161C;font-weight:800;font-size:13.5px;line-height:1.9;}
+    @media print{ @page{size:auto;margin:0;} body{padding:0;} .rx-page{padding:14px 22px 10px;} }
   </style></head>
   <body onload="setTimeout(function(){window.print();},250)">
   <div class="rx-page">
-    <div class="rx-top-band">
-      <div class="rx-seal">OB</div>
-      <div class="rx-doctor-name">د. عثمان بهاء</div>
-      <div class="rx-doctor-role">الطبيب المعالج</div>
+    <div class="rx-header">
+      <div class="rx-logo-wrap"><div class="rx-logo-circle">🩺</div></div>
+      <div class="rx-gold-accent"></div>
+      <div class="rx-header-text">
+        <div class="rx-doctor-title">الدكتور</div>
+        <div class="rx-doctor-name">عثمان بهاء العاني</div>
+        <div class="rx-doctor-specialty">جراحة عامة - اطفال - مفاصل</div>
+      </div>
     </div>
-    <div class="rx-patient-line"><b>الاسم :</b><span class="val">${escapeHtml(p.name)}</span></div>
-    <div class="rx-meta-line">
-      <span><b>العمر :</b> ${escapeHtml(p.age||'—')}</span>
+    <div class="rx-divider-banner"></div>
+    <div class="rx-patient-line">
+      <span><b>اسم المريض:</b> <span class="val">${escapeHtml(p.name)}</span></span>
       <span><b>التاريخ :</b> ${escapeHtml(v.date)}</span>
     </div>
+    <div class="rx-divider-thin"></div>
     <div class="rx-box">
       <div class="rx-r">Rx:</div>
       <div class="rx-box-body">
-        ${lines.length ? lines.map(l=>`<div>${escapeHtml(l)}</div>`).join('') : '<div class="rx-empty">No treatment recorded for this visit</div>'}
+        ${renderRxTreatmentTable(lines)}
       </div>
     </div>
     <div class="rx-sign"><div class="line"></div>توقيع وختم الطبيب</div>
-    <div class="rx-bottom-band">طُبعت بتاريخ ${printedAt}</div>
+    <div class="rx-footer-band"></div>
+    <div class="rx-footer-text">
+      <div>بغداد - الأعظمية - شارع 20 - فرع مدرسة ابن الهيثم</div>
+      <div>رقم الحجز: 07733790938</div>
+    </div>
   </div>
   </body></html>`;
   const win = window.open('', '_blank');
@@ -2247,6 +2362,7 @@ function openExamModal(id){
   document.getElementById('examCategory').value = a.category||'clinic';
   document.getElementById('examDiagnosis').value = a.diagnosis||'';
   document.getElementById('examLabResults').value = a.labResults || LAB_TEMPLATE_TEXT;
+  refreshLabHighlight('examLabResults');
   document.getElementById('examTreatment').value = a.treatment||'';
   document.getElementById('examNotes').value = a.notes||'';
   document.getElementById('examMedSearch').value = '';
@@ -2415,50 +2531,68 @@ function printApptRx(apptId){
   <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;}
-    .rx-page{max-width:720px;margin:0 auto;padding:0 40px 34px;position:relative;}
-    .rx-top-band{background:linear-gradient(135deg,#2FB7E6,#1D5FC9);color:#fff;text-align:center;
-      padding:26px 20px 30px;border-radius:0 0 46px 46px;margin:0 0 26px;}
-    .rx-seal{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;background:rgba(255,255,255,.18);
-      display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:20px;border:1.5px solid rgba(255,255,255,.5);}
-    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:24px;color:#fff;}
-    .rx-doctor-role{font-size:13px;color:rgba(255,255,255,.9);margin-top:2px;}
-    .rx-patient-line{display:flex;align-items:baseline;gap:14px;border-bottom:1.5px dotted #B9C7DC;padding-bottom:12px;margin-bottom:16px;font-size:15px;}
-    .rx-patient-line b{color:#0E3B85;flex-shrink:0;}
-    .rx-patient-line .val{flex:1;font-weight:700;}
-    .rx-meta-line{display:flex;gap:46px;margin-bottom:26px;font-size:14.5px;}
-    .rx-meta-line b{color:#0E3B85;}
-    .rx-box{border:2px solid #1D5FC9;border-radius:16px;padding:22px 24px;min-height:300px;}
-    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:28px;font-weight:800;color:#1D5FC9;margin-bottom:18px;direction:ltr;text-align:left;}
-    .rx-box-body{direction:ltr;text-align:left;font-size:15.5px;line-height:2.5;}
-    .rx-box-body div{margin-bottom:6px;}
+    body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;background:#fff;}
+    .rx-page{max-width:720px;margin:0 auto;padding:22px 26px 18px;position:relative;}
+    .rx-header{position:relative;min-height:110px;padding-top:4px;}
+    .rx-logo-wrap{position:absolute;top:0;left:0;width:100px;height:100px;border-radius:50%;border:2px dashed #cfd8e2;display:flex;align-items:center;justify-content:center;}
+    .rx-logo-circle{width:82px;height:82px;border-radius:50%;background:linear-gradient(145deg,#3b7bab,#2a5b82);display:flex;align-items:center;justify-content:center;font-size:34px;color:#fff;}
+    .rx-gold-accent{position:absolute;top:16px;left:auto;right:-26px;width:230px;height:44px;
+      background:linear-gradient(100deg,#9099a3 0%,#9099a3 22%,#f6b73e 40%,#f6b73e 100%);
+      clip-path:polygon(18% 0,100% 0,82% 100%,0% 100%);}
+    .rx-header-text{text-align:center;}
+    .rx-doctor-title{font-size:16px;font-weight:800;color:#1B3B66;}
+    .rx-doctor-name{font-family:'Tajawal',sans-serif;font-weight:800;font-size:23px;color:#D0161C;margin-top:2px;}
+    .rx-doctor-specialty{font-size:15px;color:#1B3B66;font-weight:800;margin-top:4px;}
+    .rx-divider-banner{position:relative;height:26px;background:#1B3B66;overflow:hidden;margin:16px 0 22px;}
+    .rx-divider-banner::after{content:'';position:absolute;top:-6px;left:-6%;width:112%;height:12px;background:#fff;transform:rotate(-2.2deg);}
+    .rx-patient-line{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:14px;font-size:15.5px;}
+    .rx-patient-line b{color:#132338;font-weight:800;}
+    .rx-patient-line .val{font-weight:700;}
+    .rx-divider-thin{height:6px;background:#1B3B66;margin-bottom:22px;}
+    .rx-box{border:2px dashed #333;border-radius:18px;padding:22px 24px;min-height:520px;}
+    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:26px;font-weight:800;color:#1B3B66;margin-bottom:18px;direction:ltr;text-align:left;}
+    .rx-box-body{direction:ltr;text-align:left;font-size:15.5px;line-height:1.8;}
+    .rx-table{width:100%;border-collapse:collapse;font-size:14px;}
+    .rx-table th{background:#eef2f7;color:#1B3B66;font-weight:800;padding:9px 12px;border:1px solid #c9d3de;text-align:left;}
+    .rx-table td{padding:9px 12px;border:1px solid #c9d3de;vertical-align:top;text-align:left;}
+    .rx-table td:last-child,.rx-table th:last-child{text-align:right;}
+    .rx-table-num{width:32px;text-align:center!important;color:#5A6C85;font-weight:700;}
     .rx-empty{color:#9AA8BC;font-size:13.5px;}
-    .rx-sign{margin-top:34px;text-align:left;font-size:12px;color:#5A6C85;}
+    .rx-sign{margin-top:16px;text-align:left;font-size:12px;color:#5A6C85;}
     .rx-sign .line{width:170px;border-bottom:1.5px solid #132338;margin:0 0 6px auto;height:36px;}
-    .rx-bottom-band{background:linear-gradient(135deg,#1D5FC9,#2FB7E6);color:#fff;text-align:center;
-      padding:12px 20px;border-radius:26px 26px 0 0;margin:30px -40px -34px;font-size:11px;letter-spacing:.3px;}
-    @media print{ @page{size:auto;margin:0;} body{padding:0;} .rx-page{padding:0 30px 22px;} }
+    .rx-footer-band{height:6px;background:#1B3B66;margin:18px 0 10px;}
+    .rx-footer-text{text-align:center;color:#D0161C;font-weight:800;font-size:13.5px;line-height:1.9;}
+    @media print{ @page{size:auto;margin:0;} body{padding:0;} .rx-page{padding:14px 22px 10px;} }
   </style></head>
   <body onload="setTimeout(function(){window.print();},250)">
   <div class="rx-page">
-    <div class="rx-top-band">
-      <div class="rx-seal">OB</div>
-      <div class="rx-doctor-name">د. عثمان بهاء</div>
-      <div class="rx-doctor-role">الطبيب المعالج</div>
+    <div class="rx-header">
+      <div class="rx-logo-wrap"><div class="rx-logo-circle">🩺</div></div>
+      <div class="rx-gold-accent"></div>
+      <div class="rx-header-text">
+        <div class="rx-doctor-title">الدكتور</div>
+        <div class="rx-doctor-name">عثمان بهاء العاني</div>
+        <div class="rx-doctor-specialty">جراحة عامة - اطفال - مفاصل</div>
+      </div>
     </div>
-    <div class="rx-patient-line"><b>الاسم :</b><span class="val">${escapeHtml(a.name)}</span></div>
-    <div class="rx-meta-line">
-      <span><b>العمر :</b> ${escapeHtml(a.age||'—')}</span>
+    <div class="rx-divider-banner"></div>
+    <div class="rx-patient-line">
+      <span><b>اسم المريض:</b> <span class="val">${escapeHtml(a.name)}</span></span>
       <span><b>التاريخ :</b> ${escapeHtml(a.date)}</span>
     </div>
+    <div class="rx-divider-thin"></div>
     <div class="rx-box">
       <div class="rx-r">Rx:</div>
       <div class="rx-box-body">
-        ${lines.length ? lines.map(l=>`<div>${escapeHtml(l)}</div>`).join('') : '<div class="rx-empty">No treatment recorded for this visit</div>'}
+        ${renderRxTreatmentTable(lines)}
       </div>
     </div>
     <div class="rx-sign"><div class="line"></div>توقيع وختم الطبيب</div>
-    <div class="rx-bottom-band">طُبعت بتاريخ ${printedAt}</div>
+    <div class="rx-footer-band"></div>
+    <div class="rx-footer-text">
+      <div>بغداد - الأعظمية - شارع 20 - فرع مدرسة ابن الهيثم</div>
+      <div>رقم الحجز: 07733790938</div>
+    </div>
   </div>
   </body></html>`;
   const win = window.open('', '_blank');
@@ -2520,6 +2654,10 @@ document.addEventListener('click', function(e){
     showView('home');
   }
 })();
+
+initLabHighlighter('examLabResults');
+initLabHighlighter('pLabResults');
+initLabHighlighter('visitLabResults');
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
