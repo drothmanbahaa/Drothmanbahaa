@@ -1572,23 +1572,21 @@ function printVisit(type, patientId, visitId){
     *{box-sizing:border-box;}
     body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;}
     .rx-page{max-width:720px;margin:0 auto;padding:34px 40px;position:relative;}
-    .rx-header{text-align:center;border-bottom:2px solid #1D5FC9;padding-bottom:16px;margin-bottom:20px;}
+    .rx-header{text-align:center;border-bottom:2px solid #1D5FC9;padding-bottom:16px;margin-bottom:26px;}
     .rx-seal{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;background:linear-gradient(145deg,#2FB7E6,#1D5FC9);
       display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:20px;}
-    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:22px;color:#0E3B85;}
+    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:24px;color:#0E3B85;}
     .rx-doctor-role{font-size:13px;color:#5A6C85;margin-top:2px;}
-    .rx-fields{display:flex;flex-wrap:wrap;gap:10px 26px;margin-bottom:16px;font-size:13.5px;}
-    .rx-fields b{color:#0E3B85;}
-    .rx-allergy{background:#FBEAEA;color:#D2574F;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:700;margin-bottom:16px;}
-    .rx-diagnosis{font-size:14px;margin-bottom:10px;}
-    .rx-diagnosis b{color:#0E3B85;}
-    .rx-lab{font-size:13.5px;margin-bottom:18px;color:#5A6C85;}
-    .rx-lab b{color:#0E3B85;}
-    .rx-body{display:flex;gap:14px;min-height:90px;}
-    .rx-symbol{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:26px;color:#1D5FC9;flex-shrink:0;}
-    .rx-list{margin:2px 0 0;padding-right:4px;list-style:none;font-size:14.5px;line-height:2.3;flex:1;}
-    .rx-list li{border-bottom:1px dotted #DCE6F4;padding-bottom:6px;margin-bottom:6px;}
-    .rx-empty{color:#7C8CA6;font-size:13.5px;}
+    .rx-patient-line{display:flex;align-items:baseline;gap:14px;border-bottom:1.5px dotted #B9C7DC;padding-bottom:12px;margin-bottom:16px;font-size:15px;}
+    .rx-patient-line b{color:#0E3B85;flex-shrink:0;}
+    .rx-patient-line .val{flex:1;font-weight:700;}
+    .rx-meta-line{display:flex;gap:46px;margin-bottom:26px;font-size:14.5px;}
+    .rx-meta-line b{color:#0E3B85;}
+    .rx-box{border:2px solid #1D5FC9;border-radius:16px;padding:22px 24px;min-height:300px;}
+    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:28px;font-weight:800;color:#1D5FC9;margin-bottom:18px;}
+    .rx-box-body{direction:ltr;text-align:left;font-size:15.5px;line-height:2.5;}
+    .rx-box-body div{margin-bottom:6px;}
+    .rx-empty{color:#9AA8BC;font-size:13.5px;}
     .rx-sign{margin-top:34px;text-align:left;font-size:12px;color:#5A6C85;}
     .rx-sign .line{width:170px;border-bottom:1.5px solid #132338;margin:0 0 6px auto;height:36px;}
     .rx-footer{margin-top:26px;border-top:1px solid #DCE6F4;padding-top:10px;font-size:10px;color:#9AA8BC;text-align:left;}
@@ -1601,20 +1599,17 @@ function printVisit(type, patientId, visitId){
       <div class="rx-doctor-name">د. عثمان بهاء</div>
       <div class="rx-doctor-role">الطبيب المعالج</div>
     </div>
-    <div class="rx-fields">
-      <span><b>Name:</b> ${escapeHtml(p.name)}</span>
-      <span><b>Age:</b> ${escapeHtml(p.age||'—')}</span>
-      <span><b>Sex:</b> ${escapeHtml(sexVal)}</span>
-      <span><b>Date:</b> ${escapeHtml(v.date)}</span>
+    <div class="rx-patient-line"><b>الاسم :</b><span class="val">${escapeHtml(p.name)}</span></div>
+    <div class="rx-meta-line">
+      <span><b>العمر :</b> ${escapeHtml(p.age||'—')}</span>
+      <span><b>التاريخ :</b> ${escapeHtml(v.date)}</span>
     </div>
-    ${(p.dh||p.allergy) ? `<div class="rx-allergy">⚠️ DH: ${escapeHtml(p.dh||p.allergy)}</div>` : ''}
-    <div class="rx-diagnosis"><b>Diagnosis:</b> ${escapeHtml(v.diagnosis||'—')}</div>
-    ${v.labResults ? `<div class="rx-lab"><b>Lab results:</b> ${escapeHtml(v.labResults)}</div>` : ''}
-    <div class="rx-body">
-      <div class="rx-symbol">RX/</div>
-      ${lines.length ? '<ul class="rx-list">'+lines.map(l=>`<li>${escapeHtml(l)}</li>`).join('')+'</ul>' : '<div class="rx-empty">No treatment recorded for this visit</div>'}
+    <div class="rx-box">
+      <div class="rx-r">R:</div>
+      <div class="rx-box-body">
+        ${lines.length ? lines.map(l=>`<div>${escapeHtml(l)}</div>`).join('') : '<div class="rx-empty">No treatment recorded for this visit</div>'}
+      </div>
     </div>
-    ${v.notes ? `<div class="rx-lab"><b>Notes:</b> ${escapeHtml(v.notes)}</div>` : ''}
     <div class="rx-sign"><div class="line"></div>توقيع وختم الطبيب</div>
     <div class="rx-footer">طُبعت بتاريخ ${printedAt}</div>
   </div>
@@ -2420,22 +2415,21 @@ function printApptRx(apptId){
     *{box-sizing:border-box;}
     body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;}
     .rx-page{max-width:720px;margin:0 auto;padding:34px 40px;position:relative;}
-    .rx-header{text-align:center;border-bottom:2px solid #1D5FC9;padding-bottom:16px;margin-bottom:20px;}
+    .rx-header{text-align:center;border-bottom:2px solid #1D5FC9;padding-bottom:16px;margin-bottom:26px;}
     .rx-seal{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;background:linear-gradient(145deg,#2FB7E6,#1D5FC9);
       display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:20px;}
-    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:22px;color:#0E3B85;}
+    .rx-doctor-name{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:24px;color:#0E3B85;}
     .rx-doctor-role{font-size:13px;color:#5A6C85;margin-top:2px;}
-    .rx-fields{display:flex;flex-wrap:wrap;gap:10px 26px;margin-bottom:16px;font-size:13.5px;}
-    .rx-fields b{color:#0E3B85;}
-    .rx-diagnosis{font-size:14px;margin-bottom:10px;}
-    .rx-diagnosis b{color:#0E3B85;}
-    .rx-lab{font-size:13.5px;margin-bottom:18px;color:#5A6C85;}
-    .rx-lab b{color:#0E3B85;}
-    .rx-body{display:flex;gap:14px;min-height:90px;}
-    .rx-symbol{font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:26px;color:#1D5FC9;flex-shrink:0;}
-    .rx-list{margin:2px 0 0;padding-right:4px;list-style:none;font-size:14.5px;line-height:2.3;flex:1;}
-    .rx-list li{border-bottom:1px dotted #DCE6F4;padding-bottom:6px;margin-bottom:6px;}
-    .rx-empty{color:#7C8CA6;font-size:13.5px;}
+    .rx-patient-line{display:flex;align-items:baseline;gap:14px;border-bottom:1.5px dotted #B9C7DC;padding-bottom:12px;margin-bottom:16px;font-size:15px;}
+    .rx-patient-line b{color:#0E3B85;flex-shrink:0;}
+    .rx-patient-line .val{flex:1;font-weight:700;}
+    .rx-meta-line{display:flex;gap:46px;margin-bottom:26px;font-size:14.5px;}
+    .rx-meta-line b{color:#0E3B85;}
+    .rx-box{border:2px solid #1D5FC9;border-radius:16px;padding:22px 24px;min-height:300px;}
+    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:28px;font-weight:800;color:#1D5FC9;margin-bottom:18px;}
+    .rx-box-body{direction:ltr;text-align:left;font-size:15.5px;line-height:2.5;}
+    .rx-box-body div{margin-bottom:6px;}
+    .rx-empty{color:#9AA8BC;font-size:13.5px;}
     .rx-sign{margin-top:34px;text-align:left;font-size:12px;color:#5A6C85;}
     .rx-sign .line{width:170px;border-bottom:1.5px solid #132338;margin:0 0 6px auto;height:36px;}
     .rx-footer{margin-top:26px;border-top:1px solid #DCE6F4;padding-top:10px;font-size:10px;color:#9AA8BC;text-align:left;}
@@ -2448,19 +2442,17 @@ function printApptRx(apptId){
       <div class="rx-doctor-name">د. عثمان بهاء</div>
       <div class="rx-doctor-role">الطبيب المعالج</div>
     </div>
-    <div class="rx-fields">
-      <span><b>Name:</b> ${escapeHtml(a.name)}</span>
-      <span><b>Age:</b> ${escapeHtml(a.age||'—')}</span>
-      <span><b>Sex:</b> ${escapeHtml(a.sex||'—')}</span>
-      <span><b>Date:</b> ${escapeHtml(a.date)}</span>
+    <div class="rx-patient-line"><b>الاسم :</b><span class="val">${escapeHtml(a.name)}</span></div>
+    <div class="rx-meta-line">
+      <span><b>العمر :</b> ${escapeHtml(a.age||'—')}</span>
+      <span><b>التاريخ :</b> ${escapeHtml(a.date)}</span>
     </div>
-    <div class="rx-diagnosis"><b>Diagnosis:</b> ${escapeHtml(a.diagnosis||'—')}</div>
-    ${a.labResults ? `<div class="rx-lab"><b>Lab results:</b> ${escapeHtml(a.labResults)}</div>` : ''}
-    <div class="rx-body">
-      <div class="rx-symbol">RX/</div>
-      ${lines.length ? '<ul class="rx-list">'+lines.map(l=>`<li>${escapeHtml(l)}</li>`).join('')+'</ul>' : '<div class="rx-empty">No treatment recorded for this visit</div>'}
+    <div class="rx-box">
+      <div class="rx-r">R:</div>
+      <div class="rx-box-body">
+        ${lines.length ? lines.map(l=>`<div>${escapeHtml(l)}</div>`).join('') : '<div class="rx-empty">No treatment recorded for this visit</div>'}
+      </div>
     </div>
-    ${a.notes ? `<div class="rx-lab"><b>Notes:</b> ${escapeHtml(a.notes)}</div>` : ''}
     <div class="rx-sign"><div class="line"></div>توقيع وختم الطبيب</div>
     <div class="rx-footer">طُبعت بتاريخ ${printedAt}</div>
   </div>
