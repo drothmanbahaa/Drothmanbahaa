@@ -1668,7 +1668,7 @@ function printVisit(type, patientId, visitId){
   <style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;background:#fff;}
-    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;}
+    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:277mm;display:flex;flex-direction:column;}
     .rx-header{position:relative;min-height:88px;padding-top:2px;}
     .rx-logo-wrap{position:absolute;top:0;left:0;width:82px;height:82px;border-radius:50%;border:2px dashed #cfd8e2;display:flex;align-items:center;justify-content:center;}
     .rx-logo-circle{width:66px;height:66px;border-radius:50%;background:linear-gradient(145deg,#3b7bab,#2a5b82);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;}
@@ -1685,7 +1685,7 @@ function printVisit(type, patientId, visitId){
     .rx-patient-line b{color:#132338;font-weight:800;}
     .rx-patient-line .val{font-weight:700;}
     .rx-divider-thin{height:4px;background:#1B3B66;margin-bottom:12px;}
-    .rx-box{border:2px dashed #333;border-radius:14px;padding:14px 18px;min-height:230px;}
+    .rx-box{border:2px dashed #333;border-radius:14px;padding:14px 18px;flex:1 1 auto;}
     .rx-r{font-family:'Baloo Bhaijaan 2';font-size:20px;font-weight:800;color:#1B3B66;margin-bottom:10px;direction:ltr;text-align:left;}
     .rx-box-body{direction:ltr;text-align:left;font-size:13px;line-height:1.5;}
     .rx-table{width:100%;border-collapse:collapse;font-size:14px;}
@@ -1708,12 +1708,14 @@ function printVisit(type, patientId, visitId){
       <div class="rx-header-text">
         <div class="rx-doctor-title">الدكتور</div>
         <div class="rx-doctor-name">عثمان بهاء العاني</div>
-        <div class="rx-doctor-specialty">جراحة عامة - اطفال - مفاصل</div>
+        <div class="rx-doctor-specialty">الجراحة العامة والناظورية</div>
+        <div class="rx-doctor-specialty">وعلاج السمنة والسكري</div>
       </div>
     </div>
     <div class="rx-divider-banner"></div>
     <div class="rx-patient-line">
       <span><b>اسم المريض:</b> <span class="val">${escapeHtml(p.name)}</span></span>
+      <span><b>العمر :</b> ${escapeHtml(p.age||'—')}</span>
       <span><b>التاريخ :</b> ${escapeHtml(v.date)}</span>
     </div>
     <div class="rx-divider-thin"></div>
@@ -2532,7 +2534,7 @@ function printApptRx(apptId){
   <style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;background:#fff;}
-    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;}
+    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:277mm;display:flex;flex-direction:column;}
     .rx-header{position:relative;min-height:88px;padding-top:2px;}
     .rx-logo-wrap{position:absolute;top:0;left:0;width:82px;height:82px;border-radius:50%;border:2px dashed #cfd8e2;display:flex;align-items:center;justify-content:center;}
     .rx-logo-circle{width:66px;height:66px;border-radius:50%;background:linear-gradient(145deg,#3b7bab,#2a5b82);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;}
@@ -2549,7 +2551,7 @@ function printApptRx(apptId){
     .rx-patient-line b{color:#132338;font-weight:800;}
     .rx-patient-line .val{font-weight:700;}
     .rx-divider-thin{height:4px;background:#1B3B66;margin-bottom:12px;}
-    .rx-box{border:2px dashed #333;border-radius:14px;padding:14px 18px;min-height:230px;}
+    .rx-box{border:2px dashed #333;border-radius:14px;padding:14px 18px;flex:1 1 auto;}
     .rx-r{font-family:'Baloo Bhaijaan 2';font-size:20px;font-weight:800;color:#1B3B66;margin-bottom:10px;direction:ltr;text-align:left;}
     .rx-box-body{direction:ltr;text-align:left;font-size:13px;line-height:1.5;}
     .rx-table{width:100%;border-collapse:collapse;font-size:14px;}
@@ -2572,12 +2574,14 @@ function printApptRx(apptId){
       <div class="rx-header-text">
         <div class="rx-doctor-title">الدكتور</div>
         <div class="rx-doctor-name">عثمان بهاء العاني</div>
-        <div class="rx-doctor-specialty">جراحة عامة - اطفال - مفاصل</div>
+        <div class="rx-doctor-specialty">الجراحة العامة والناظورية</div>
+        <div class="rx-doctor-specialty">وعلاج السمنة والسكري</div>
       </div>
     </div>
     <div class="rx-divider-banner"></div>
     <div class="rx-patient-line">
       <span><b>اسم المريض:</b> <span class="val">${escapeHtml(a.name)}</span></span>
+      <span><b>العمر :</b> ${escapeHtml(a.age||'—')}</span>
       <span><b>التاريخ :</b> ${escapeHtml(a.date)}</span>
     </div>
     <div class="rx-divider-thin"></div>
