@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#F2F6FC;
@@ -421,6 +422,12 @@ tr:last-child td{border-bottom:none;}
             <h4>تنزيل نسخة احتياطية</h4>
             <p>يتم حفظ كل البيانات (العيادة، العمليات، التغذية، الأدوية) في ملف واحد يمكنك حفظه في مكان آمن.</p>
             <button class="btn btn-primary" onclick="downloadBackup()">تنزيل النسخة الاحتياطية</button>
+          </div>
+          <div class="backup-card">
+            <div class="ic">📊</div>
+            <h4>تصدير كملف Excel</h4>
+            <p>يُصدّر بيانات المرضى الثلاث (معلومات + سجل الزيارات) والأدوية كجداول Excel منظّمة للقراءة أو الطباعة. هذا الملف للعرض فقط ولا يُستخدم للاستعادة.</p>
+            <button class="btn btn-outline" onclick="exportToExcel()">تصدير Excel</button>
           </div>
         </div>
         <div class="section-title">استرجاع من ملف نسخة احتياطية</div>
@@ -1877,6 +1884,52 @@ function downloadBackup(){
   localStorage.setItem(LS.lastBackup, now);
   renderBackupInfo();
   showToast('تم تنزيل النسخة الاحتياطية بنجاح');
+}
+function exportToExcel(){
+  if(typeof XLSX === 'undefined'){
+    showToast('تعذر تحميل أداة تصدير Excel، تحقق من الاتصال بالإنترنت وأعد تحميل الصفحة');
+    return;
+  }
+  const catLabelsEn = { clinic:'Clinic', surgery:'Surgery', nutrition:'Nutrition' };
+  const wb = XLSX.utils.book_new();
+
+  ['clinic','surgery','nutrition'].forEach(cat=>{
+    const list = DB[cat];
+    const patientRows = list.map(p=>{
+      const visits = p.visits||[];
+      const last = visits.length ? visits[visits.length-1] : null;
+      return {
+        Name: p.name, Phone: p.phone||'', Age: p.age||'', Sex: p.sex||'',
+        Address: p.address||'', PMH: p.pmh||'', DH: p.dh||'',
+        'Visit Count': visits.length,
+        'Latest Visit Date': last ? last.date||'' : '',
+        'Latest Diagnosis': last ? last.diagnosis||'' : ''
+      };
+    });
+    const patientSheet = XLSX.utils.json_to_sheet(patientRows);
+    XLSX.utils.book_append_sheet(wb, patientSheet, 'Patients - ' + catLabelsEn[cat]);
+
+    const visitRows = [];
+    list.forEach(p=>{
+      (p.visits||[]).forEach(v=>{
+        visitRows.push({
+          Name: p.name, Phone: p.phone||'', Date: v.date||'',
+          Diagnosis: v.diagnosis||'', 'Lab Results': v.labResults||'',
+          Treatment: v.treatment||'', Notes: v.notes||''
+        });
+      });
+    });
+    const visitSheet = XLSX.utils.json_to_sheet(visitRows);
+    XLSX.utils.book_append_sheet(wb, visitSheet, 'Visits - ' + catLabelsEn[cat]);
+  });
+
+  const medRows = DB.meds.map(m=>({ Name:m.name, Dose:m.dose, Notes:m.notes||'' }));
+  const medSheet = XLSX.utils.json_to_sheet(medRows);
+  XLSX.utils.book_append_sheet(wb, medSheet, 'Medications');
+
+  const stamp = todayStr();
+  XLSX.writeFile(wb, 'عيادة-عثمان-بهاء-'+stamp+'.xlsx');
+  showToast('تم تصدير ملف Excel بنجاح');
 }
 let pendingRestoreData = null;
 let pendingRestoreInputId = null;
