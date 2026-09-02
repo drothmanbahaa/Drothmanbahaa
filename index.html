@@ -511,7 +511,7 @@ tr:last-child td{border-bottom:none;}
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('apptModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveAppointment()">حفظ الموعد</button>
+      <button class="btn btn-primary" onclick="saveAppointment(this)">حفظ الموعد</button>
     </div>
   </div>
 </div>
@@ -581,7 +581,7 @@ tr:last-child td{border-bottom:none;}
 
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('examModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveExam()">💾 حفظ الكشف</button>
+      <button class="btn btn-primary" onclick="saveExam(this)">💾 حفظ الكشف</button>
     </div>
   </div>
 </div>
@@ -638,7 +638,7 @@ tr:last-child td{border-bottom:none;}
 
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('patientModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="savePatient()">حفظ المريض</button>
+      <button class="btn btn-primary" onclick="savePatient(this)">حفظ المريض</button>
     </div>
   </div>
 </div>
@@ -662,7 +662,7 @@ tr:last-child td{border-bottom:none;}
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('medModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveMed()">حفظ الدواء</button>
+      <button class="btn btn-primary" onclick="saveMed(this)">حفظ الدواء</button>
     </div>
   </div>
 </div>
@@ -968,6 +968,19 @@ function showToast(msg){
   t.textContent = msg; t.classList.add('show');
   clearTimeout(t._timer);
   t._timer = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+/* يمنع الضغط المزدوج على أزرار الحفظ أثناء تنفيذ عملية غير متزامنة (يسبب تكرار السجلات) */
+async function withButtonLock(btn, fn){
+  if(!btn) return fn();
+  if(btn.disabled) return;
+  const original = btn.textContent;
+  btn.disabled = true;
+  try{
+    return await fn();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
 }
 function customConfirm(message){
   return new Promise(resolve=>{
@@ -1344,9 +1357,10 @@ function insertPatientModalDose(){
   ta.value = ta.value.trim() ? (ta.value.trim() + '\n' + line) : line;
   showToast('تمت إضافة الجرعة للوصفة');
 }
-async function savePatient(){
+async function savePatient(btn){
   const name = document.getElementById('pName').value.trim();
   if(!name){ showToast('يرجى إدخال اسم المريض'); return; }
+  await withButtonLock(btn, async ()=>{
   const row = {
     name,
     phone: document.getElementById('pPhone').value.trim(),
@@ -1399,6 +1413,7 @@ async function savePatient(){
   renderPatientTable();
   renderDashboard();
   showToast(queued ? '📴 لا يوجد اتصال — تم الحفظ محليًا وستتم المزامنة تلقائيًا عند عودة الإنترنت' : ('تم حفظ بيانات المريض' + (hasExamContent ? ' والزيارة' : '')));
+  });
 }
 
 /* =========================================================
@@ -1472,7 +1487,7 @@ function renderPatientDetail(){
 
       <div class="modal-actions">
         ${detailCtx.editingVisitId ? `<button class="btn btn-outline" onclick="cancelEditVisit()">إلغاء التعديل</button>` : ''}
-        <button class="btn btn-primary" onclick="saveVisit()">💾 ${detailCtx.editingVisitId ? 'تحديث الزيارة' : 'حفظ الزيارة'}</button>
+        <button class="btn btn-primary" onclick="saveVisit(this)">💾 ${detailCtx.editingVisitId ? 'تحديث الزيارة' : 'حفظ الزيارة'}</button>
       </div>
     </div>` : ''}
 
@@ -1634,16 +1649,19 @@ async function deletePatientAndCloseDetail(type, id){
   await deletePatient(type, id);
 }
 
-async function saveVisit(){
+async function saveVisit(btn){
   if(currentRole!=='doctor') return;
   const p = DB[detailCtx.type].find(x=>x.id===detailCtx.id);
   if(!p) return;
+  const diagnosis0 = document.getElementById('visitDiagnosis').value.trim();
+  const treatment0 = document.getElementById('visitTreatment').value.trim();
+  if(!diagnosis0 && !treatment0){ showToast('يرجى إدخال التشخيص أو العلاج على الأقل'); return; }
+  await withButtonLock(btn, async ()=>{
   const date = document.getElementById('visitDate').value || todayStr();
-  const diagnosis = document.getElementById('visitDiagnosis').value.trim();
+  const diagnosis = diagnosis0;
   const labResults = document.getElementById('visitLabResults').value.trim();
-  const treatment = document.getElementById('visitTreatment').value.trim();
+  const treatment = treatment0;
   const notes = document.getElementById('visitNotes').value.trim();
-  if(!diagnosis && !treatment){ showToast('يرجى إدخال التشخيص أو العلاج على الأقل'); return; }
   if(!p.visits) p.visits = [];
   const backup = p.visits.slice();
   if(detailCtx.editingVisitId){
@@ -1658,6 +1676,7 @@ async function saveVisit(){
   renderPatientDetail();
   renderPatientTable();
   showToast('تم حفظ الزيارة والوصفة');
+  });
 }
 
 /* =========================================================
@@ -1676,38 +1695,44 @@ function printVisit(type, patientId, visitId){
   <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;background:#fff;}
-    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:190mm;display:flex;flex-direction:column;}
-    .rx-header{position:relative;min-height:88px;padding-top:2px;}
+    html,body{height:100%;}
+    body{font-family:'Tajawal',sans-serif;font-weight:500;color:#132338;margin:0;padding:0;background:#fff;}
+    .rx-page{width:100%;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:100vh;display:flex;flex-direction:column;}
+    .rx-header{position:relative;min-height:96px;padding-top:2px;}
     .rx-logo-wrap{position:absolute;top:0;left:0;width:82px;height:82px;border-radius:50%;border:2px dashed #cfd8e2;display:flex;align-items:center;justify-content:center;}
     .rx-logo-circle{width:66px;height:66px;border-radius:50%;background:linear-gradient(145deg,#3b7bab,#2a5b82);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;}
     .rx-gold-accent{position:absolute;top:10px;left:auto;right:-26px;width:200px;height:34px;
       background:linear-gradient(100deg,#9099a3 0%,#9099a3 22%,#f6b73e 40%,#f6b73e 100%);
       clip-path:polygon(18% 0,100% 0,82% 100%,0% 100%);}
     .rx-header-text{text-align:center;}
-    .rx-doctor-title{font-size:13px;font-weight:800;color:#1B3B66;}
-    .rx-doctor-name{font-family:'Tajawal',sans-serif;font-weight:800;font-size:19px;color:#D0161C;margin-top:1px;}
-    .rx-doctor-specialty{font-size:12.5px;color:#1B3B66;font-weight:800;margin-top:2px;}
+    .rx-doctor-title{font-size:15px;font-weight:800;color:#1B3B66;}
+    .rx-doctor-name{font-family:'Tajawal',sans-serif;font-weight:800;font-size:23px;color:#D0161C;margin-top:2px;}
+    .rx-doctor-specialty{font-size:14.5px;color:#1B3B66;font-weight:800;margin-top:3px;}
     .rx-divider-banner{position:relative;height:18px;background:#1B3B66;overflow:hidden;margin:10px 0 14px;}
     .rx-divider-banner::after{content:'';position:absolute;top:-6px;left:-6%;width:112%;height:12px;background:#fff;transform:rotate(-2.2deg);}
-    .rx-patient-line{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:8px;font-size:13.5px;}
+    .rx-patient-line{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:8px;font-size:16px;font-weight:700;}
     .rx-patient-line b{color:#132338;font-weight:800;}
     .rx-patient-line .val{font-weight:700;}
     .rx-divider-thin{height:4px;background:#1B3B66;margin-bottom:12px;}
-    .rx-box{border:2px dashed #333;border-radius:14px;padding:14px 18px;flex:1 1 auto;}
-    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:20px;font-weight:800;color:#1B3B66;margin-bottom:10px;direction:ltr;text-align:left;}
-    .rx-box-body{direction:ltr;text-align:left;font-size:13px;line-height:1.5;}
-    .rx-table{width:100%;border-collapse:collapse;font-size:14px;}
-    .rx-table th{background:#eef2f7;color:#1B3B66;font-weight:800;padding:6px 10px;border:1px solid #c9d3de;text-align:left;}
-    .rx-table td{padding:6px 10px;border:1px solid #c9d3de;vertical-align:top;text-align:left;}
+    .rx-box{border:3px dashed #333;border-radius:14px;padding:20px 22px;flex:1 1 auto;display:flex;flex-direction:column;}
+    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:26px;font-weight:800;color:#1B3B66;margin-bottom:14px;direction:ltr;text-align:left;}
+    .rx-box-body{direction:ltr;text-align:left;font-size:16px;font-weight:600;line-height:1.7;flex:1;}
+    .rx-table{width:100%;border-collapse:collapse;font-size:17px;font-weight:600;}
+    .rx-table th{background:#eef2f7;color:#1B3B66;font-weight:800;padding:10px 12px;border:1px solid #c9d3de;text-align:left;font-size:15px;}
+    .rx-table td{padding:12px;border:1px solid #c9d3de;vertical-align:top;text-align:left;}
     .rx-table td:last-child,.rx-table th:last-child{text-align:right;}
-    .rx-table-num{width:32px;text-align:center!important;color:#5A6C85;font-weight:700;}
-    .rx-empty{color:#9AA8BC;font-size:13.5px;}
-    .rx-sign{margin-top:10px;text-align:left;font-size:10.5px;color:#5A6C85;}
-    .rx-sign .line{width:150px;border-bottom:1.5px solid #132338;margin:0 0 4px auto;height:22px;}
+    .rx-table-num{width:36px;text-align:center!important;color:#5A6C85;font-weight:700;}
+    .rx-empty{color:#9AA8BC;font-size:15px;}
+    .rx-sign{margin-top:14px;text-align:left;font-size:12px;color:#5A6C85;}
+    .rx-sign .line{width:160px;border-bottom:1.5px solid #132338;margin:0 0 4px auto;height:24px;}
     .rx-footer-band{height:4px;background:#1B3B66;margin:10px 0 6px;}
-    .rx-footer-text{text-align:center;color:#D0161C;font-weight:800;font-size:11px;line-height:1.5;}
-    @media print{ @page{size:A4;margin:8mm;} html,body{height:auto;} body{padding:0;} .rx-page{padding:0;max-width:100%;} }
+    .rx-footer-text{text-align:center;color:#D0161C;font-weight:800;font-size:12.5px;line-height:1.6;}
+    @media print{
+      @page{size:A4;margin:0;}
+      html,body{height:100%;}
+      body{padding:0;}
+      .rx-page{padding:10mm;width:100%;min-height:100vh;}
+    }
   </style></head>
   <body onload="setTimeout(function(){window.print();},250)">
   <div class="rx-page">
@@ -1718,7 +1743,7 @@ function printVisit(type, patientId, visitId){
         <div class="rx-doctor-title">الدكتور</div>
         <div class="rx-doctor-name">عثمان بهاء العاني</div>
         <div class="rx-doctor-specialty">الجراحة العامة والناظورية</div>
-        <div class="rx-doctor-specialty">وعلاج السمنة والسكري</div>
+        <div class="rx-doctor-specialty">علاج السمنة والسكري</div>
       </div>
     </div>
     <div class="rx-divider-banner"></div>
@@ -1768,10 +1793,11 @@ function editMed(id){
   document.getElementById('mNotes').value = m.notes||'';
   openModal('medModal');
 }
-async function saveMed(){
+async function saveMed(btn){
   const name = document.getElementById('mName').value.trim();
   const dose = document.getElementById('mDose').value.trim();
   if(!name || !dose){ showToast('يرجى إدخال اسم الدواء والجرعة الثابتة'); return; }
+  await withButtonLock(btn, async ()=>{
   const row = {
     name, dose,
     notes: document.getElementById('mNotes').value.trim()
@@ -1806,6 +1832,7 @@ async function saveMed(){
   renderMedTable();
   renderDashboard();
   showToast(queued ? '📴 لا يوجد اتصال — تم الحفظ محليًا وستتم المزامنة لاحقًا' : 'تم حفظ الدواء');
+  });
 }
 async function deleteMed(id){
   if(!(await customConfirm('هل تريد حذف هذا الدواء من القائمة؟'))) return;
@@ -2354,12 +2381,13 @@ function editAppt(id){
   document.getElementById('aTime').value = a.time||'';
   openModal('apptModal');
 }
-async function saveAppointment(){
+async function saveAppointment(btn){
   const name = document.getElementById('aName').value.trim();
   const date = document.getElementById('aDate').value;
   const time = document.getElementById('aTime').value;
   if(!name || !date || !time){ showToast('Name, date and time are required'); return; }
   if(!editingAppt && !selectedVisitType){ showToast('يرجى اختيار نوع الزيارة'); return; }
+  await withButtonLock(btn, async ()=>{
   const row = {
     patient_name: name,
     phone: document.getElementById('aPhone').value.trim(),
@@ -2416,6 +2444,7 @@ async function saveAppointment(){
   closeModal('apptModal');
   showToast(queued ? '📴 لا يوجد اتصال — تم حفظ الموعد محليًا وسيُزامن لاحقًا' : 'تم حفظ الموعد');
   renderAppointmentsView();
+  });
 }
 async function deleteAppt(id){
   if(currentRole!=='doctor') return;
@@ -2571,11 +2600,12 @@ async function findOrCreatePatientFromAppt(a){
   }
   return { cat, patient };
 }
-async function saveExam(){
+async function saveExam(btn){
   const a = APPTS.find(x=>x.id===examCtx.apptId);
   if(!a) return;
   const name = document.getElementById('examName').value.trim();
   if(!name){ showToast('يرجى إدخال اسم المريض'); return; }
+  await withButtonLock(btn, async ()=>{
   const phone = document.getElementById('examPhone').value.trim();
   const age = document.getElementById('examAge').value.trim();
   const sex = document.getElementById('examSex').value;
@@ -2620,6 +2650,7 @@ async function saveExam(){
 
   closeModal('examModal');
   renderAppointmentsView();
+  });
 }
 function printApptRx(apptId){
   const a = APPTS.find(x=>x.id===apptId);
@@ -2631,38 +2662,44 @@ function printApptRx(apptId){
   <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@700;800&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    body{font-family:'Tajawal',sans-serif;color:#132338;margin:0;padding:0;background:#fff;}
-    .rx-page{max-width:720px;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:190mm;display:flex;flex-direction:column;}
-    .rx-header{position:relative;min-height:88px;padding-top:2px;}
+    html,body{height:100%;}
+    body{font-family:'Tajawal',sans-serif;font-weight:500;color:#132338;margin:0;padding:0;background:#fff;}
+    .rx-page{width:100%;margin:0 auto;padding:14px 24px 10px;position:relative;min-height:100vh;display:flex;flex-direction:column;}
+    .rx-header{position:relative;min-height:96px;padding-top:2px;}
     .rx-logo-wrap{position:absolute;top:0;left:0;width:82px;height:82px;border-radius:50%;border:2px dashed #cfd8e2;display:flex;align-items:center;justify-content:center;}
     .rx-logo-circle{width:66px;height:66px;border-radius:50%;background:linear-gradient(145deg,#3b7bab,#2a5b82);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;}
     .rx-gold-accent{position:absolute;top:10px;left:auto;right:-26px;width:200px;height:34px;
       background:linear-gradient(100deg,#9099a3 0%,#9099a3 22%,#f6b73e 40%,#f6b73e 100%);
       clip-path:polygon(18% 0,100% 0,82% 100%,0% 100%);}
     .rx-header-text{text-align:center;}
-    .rx-doctor-title{font-size:13px;font-weight:800;color:#1B3B66;}
-    .rx-doctor-name{font-family:'Tajawal',sans-serif;font-weight:800;font-size:19px;color:#D0161C;margin-top:1px;}
-    .rx-doctor-specialty{font-size:12.5px;color:#1B3B66;font-weight:800;margin-top:2px;}
+    .rx-doctor-title{font-size:15px;font-weight:800;color:#1B3B66;}
+    .rx-doctor-name{font-family:'Tajawal',sans-serif;font-weight:800;font-size:23px;color:#D0161C;margin-top:2px;}
+    .rx-doctor-specialty{font-size:14.5px;color:#1B3B66;font-weight:800;margin-top:3px;}
     .rx-divider-banner{position:relative;height:18px;background:#1B3B66;overflow:hidden;margin:10px 0 14px;}
     .rx-divider-banner::after{content:'';position:absolute;top:-6px;left:-6%;width:112%;height:12px;background:#fff;transform:rotate(-2.2deg);}
-    .rx-patient-line{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:8px;font-size:13.5px;}
+    .rx-patient-line{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:8px;font-size:16px;font-weight:700;}
     .rx-patient-line b{color:#132338;font-weight:800;}
     .rx-patient-line .val{font-weight:700;}
     .rx-divider-thin{height:4px;background:#1B3B66;margin-bottom:12px;}
-    .rx-box{border:2px dashed #333;border-radius:14px;padding:14px 18px;flex:1 1 auto;}
-    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:20px;font-weight:800;color:#1B3B66;margin-bottom:10px;direction:ltr;text-align:left;}
-    .rx-box-body{direction:ltr;text-align:left;font-size:13px;line-height:1.5;}
-    .rx-table{width:100%;border-collapse:collapse;font-size:14px;}
-    .rx-table th{background:#eef2f7;color:#1B3B66;font-weight:800;padding:6px 10px;border:1px solid #c9d3de;text-align:left;}
-    .rx-table td{padding:6px 10px;border:1px solid #c9d3de;vertical-align:top;text-align:left;}
+    .rx-box{border:3px dashed #333;border-radius:14px;padding:20px 22px;flex:1 1 auto;display:flex;flex-direction:column;}
+    .rx-r{font-family:'Baloo Bhaijaan 2';font-size:26px;font-weight:800;color:#1B3B66;margin-bottom:14px;direction:ltr;text-align:left;}
+    .rx-box-body{direction:ltr;text-align:left;font-size:16px;font-weight:600;line-height:1.7;flex:1;}
+    .rx-table{width:100%;border-collapse:collapse;font-size:17px;font-weight:600;}
+    .rx-table th{background:#eef2f7;color:#1B3B66;font-weight:800;padding:10px 12px;border:1px solid #c9d3de;text-align:left;font-size:15px;}
+    .rx-table td{padding:12px;border:1px solid #c9d3de;vertical-align:top;text-align:left;}
     .rx-table td:last-child,.rx-table th:last-child{text-align:right;}
-    .rx-table-num{width:32px;text-align:center!important;color:#5A6C85;font-weight:700;}
-    .rx-empty{color:#9AA8BC;font-size:13.5px;}
-    .rx-sign{margin-top:10px;text-align:left;font-size:10.5px;color:#5A6C85;}
-    .rx-sign .line{width:150px;border-bottom:1.5px solid #132338;margin:0 0 4px auto;height:22px;}
+    .rx-table-num{width:36px;text-align:center!important;color:#5A6C85;font-weight:700;}
+    .rx-empty{color:#9AA8BC;font-size:15px;}
+    .rx-sign{margin-top:14px;text-align:left;font-size:12px;color:#5A6C85;}
+    .rx-sign .line{width:160px;border-bottom:1.5px solid #132338;margin:0 0 4px auto;height:24px;}
     .rx-footer-band{height:4px;background:#1B3B66;margin:10px 0 6px;}
-    .rx-footer-text{text-align:center;color:#D0161C;font-weight:800;font-size:11px;line-height:1.5;}
-    @media print{ @page{size:A4;margin:8mm;} html,body{height:auto;} body{padding:0;} .rx-page{padding:0;max-width:100%;} }
+    .rx-footer-text{text-align:center;color:#D0161C;font-weight:800;font-size:12.5px;line-height:1.6;}
+    @media print{
+      @page{size:A4;margin:0;}
+      html,body{height:100%;}
+      body{padding:0;}
+      .rx-page{padding:10mm;width:100%;min-height:100vh;}
+    }
   </style></head>
   <body onload="setTimeout(function(){window.print();},250)">
   <div class="rx-page">
@@ -2673,7 +2710,7 @@ function printApptRx(apptId){
         <div class="rx-doctor-title">الدكتور</div>
         <div class="rx-doctor-name">عثمان بهاء العاني</div>
         <div class="rx-doctor-specialty">الجراحة العامة والناظورية</div>
-        <div class="rx-doctor-specialty">وعلاج السمنة والسكري</div>
+        <div class="rx-doctor-specialty">علاج السمنة والسكري</div>
       </div>
     </div>
     <div class="rx-divider-banner"></div>
